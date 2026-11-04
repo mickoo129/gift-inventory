@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#8f1d1d">
+<title>贈品記數</title>
+<style>
+:root{
+  --bg:#f6f1e9; --card:#fffdf9; --ink:#2a2320; --muted:#7a6f66; --line:#e6ddd0;
+  --red:#a32121; --red-soft:#f7e3df; --gold:#b9862f; --gold-soft:#f6ead3;
+  --green:#2f7a4f; --green-soft:#e1f0e6; --amber:#b06d12; --amber-soft:#fbeedb;
+  --grey-soft:#efeae3; --shadow:0 1px 2px rgba(60,40,20,.06),0 4px 14px rgba(60,40,20,.05);
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,"PingFang HK","Noto Sans TC","Microsoft JhengHei",sans-serif;-webkit-text-size-adjust:100%;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+header{position:sticky;top:0;z-index:20;background:var(--red);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;box-shadow:0 2px 10px rgba(80,10,10,.18)}
+.hwrap{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:10px}
+.brand{font-weight:700;font-size:18px;letter-spacing:.03em;flex:1;min-width:0;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden}
+.seal{width:28px;height:28px;border:2px solid #f3d9a4;border-radius:6px;display:grid;place-items:center;font-size:15px;color:#f3d9a4;transform:rotate(-4deg)}
+.yearSel{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;padding:5px 8px;font-weight:600}
+.yearSel option{color:#000}
+.sync{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:10px;padding:5px 9px;font-size:12.5px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.sync::before{content:"";width:8px;height:8px;border-radius:50%;background:#7fd19b;flex:none}
+.sync.demo::before{background:#f3d9a4}.sync.err::before{background:#ff8b8b}.sync.busy::before{animation:pulse 1s infinite}
+.sync svg{width:14px;height:14px;opacity:.85}
+@media(max-width:374px){.brand .bt{display:none}}
+@keyframes pulse{50%{opacity:.3}}
+main{max-width:760px;margin:0 auto;padding:14px 16px}
+.banner{background:var(--gold-soft);border:1px solid #ead3a6;color:#6b4c14;border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.banner b{color:#5a3d0a}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+nav.tabs .in{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+nav.tabs button{border:0;background:none;padding:6px 0;border-radius:10px;color:var(--muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button.on{color:var(--red);background:var(--red-soft);font-weight:600}
+h2{font-size:15px;color:var(--muted);font-weight:600;margin:18px 2px 8px;letter-spacing:.03em}
+h2:first-child{margin-top:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.stat{padding:12px;text-align:center}
+.stat .n{font-size:26px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .l{font-size:12.5px;color:var(--muted)}
+.stat.warn .n{color:var(--red)}
+.actions{display:flex;gap:8px;margin:12px 0 4px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--red);border-color:#e9c2bc;background:#fff}
+.btn.sm{min-height:36px;padding:6px 11px;font-size:14px;border-radius:10px}
+.btn.grow{flex:1}
+.btn:disabled{opacity:.5;cursor:default}
+.plist{display:grid;gap:8px}
+.prod{padding:12px 14px}
+.prod .top{display:flex;align-items:baseline;gap:8px}
+.code{font-size:12px;font-weight:700;color:var(--gold);background:var(--gold-soft);border-radius:6px;padding:1px 6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pname{font-weight:600;flex:1;min-width:0}
+.avail{text-align:right;white-space:nowrap}
+.avail .n{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.avail .l{font-size:11.5px;color:var(--muted);display:block;margin-top:-3px}
+.avail.zero .n{color:var(--muted)}.avail.neg .n{color:var(--red)}
+.bar{height:8px;border-radius:5px;background:var(--grey-soft);overflow:hidden;display:flex;margin:9px 0 7px}
+.bar i{display:block;height:100%}
+.bar .b-pick{background:var(--green)}.bar .b-pend{background:#e0b25a}.bar .b-out{background:#b5a594}
+.nums{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
+.nums b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:0 2px 8px}
+.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px;background:var(--c)}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.search{flex:1;min-width:0;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:9px 12px;min-height:44px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:14px;white-space:nowrap}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip .c{opacity:.65;margin-left:3px}
+.person{padding:12px 14px}
+.person .top{display:flex;align-items:center;gap:8px}
+.person .nm{font-weight:700;font-size:17px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{font-size:12.5px;font-weight:600;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.badge.done{background:var(--green-soft);color:var(--green)}
+.badge.part{background:var(--amber-soft);color:var(--amber)}
+.badge.none{background:var(--red-soft);color:var(--red)}
+.badge.empty{background:var(--grey-soft);color:var(--muted)}
+.remark{font-size:13.5px;color:var(--muted);margin-top:2px}
+.items{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0 10px}
+.it{font-size:13.5px;border-radius:9px;padding:3px 8px;background:var(--grey-soft);display:inline-flex;gap:5px;align-items:baseline}
+.it .q{font-weight:700;font-variant-numeric:tabular-nums}
+.it.done{background:var(--green-soft);color:#24593a}
+.it.part{background:var(--amber-soft);color:#7d4d0c}
+.it small{opacity:.8}
+.it.owe{background:var(--red-soft);color:#7d1c1c}
+.toggle{border:0;background:none;padding:2px 0;font-size:13px;color:var(--muted);font-weight:600}
+.extra{font-size:13px;color:#86601c;background:var(--gold-soft);border-radius:9px;padding:5px 9px;margin:-2px 0 10px}
+.doneLine{font-size:14px;color:var(--green);font-weight:600;margin:8px 0 10px}
+.toolrow{display:flex;justify-content:flex-end;margin:-4px 0 8px}
+.ev .items{margin:5px 0 2px;gap:4px}
+.ev .it{font-size:12.5px;padding:2px 7px}
+.prod .top::after{content:"›";color:var(--muted);font-size:20px;line-height:1;margin-left:2px}
+.banner.old{background:#e9eef5;border-color:#cfd9e6;color:#2c4766}
+.ev{cursor:pointer}.ev:hover{border-color:#d9cbb8}
+.pen{color:var(--muted);font-size:16px;padding:2px 4px}
+.prod{cursor:pointer}.prod:hover{border-color:#d9cbb8}
+.recs{display:grid;gap:6px;margin:6px 0 4px}
+.rec{display:flex;gap:10px;align-items:flex-start;text-align:left;border:1px solid var(--line);background:#fff;border-radius:11px;padding:8px 10px;width:100%}
+.rec .rd{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted);white-space:nowrap;align-items:flex-start}
+.rec .rd .tag{font-size:11.5px;font-weight:700;border-radius:7px;padding:1px 7px}
+.rec .ri{flex:1;min-width:0;font-size:13.5px}
+.rec .rr{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.rec .rr.add{color:var(--red);font-weight:600}
+.toast{display:flex;align-items:center;gap:12px}
+.toast button{border:0;background:rgba(255,255,255,.18);color:#fff;font-weight:700;border-radius:8px;padding:5px 10px;white-space:nowrap;flex:none}
+.toast span{flex:1;min-width:0}
+.toast{width:max-content;max-width:calc(100% - 24px)}
+.loading{text-align:center;color:var(--muted);padding:60px 16px}
+.loading::before{content:"";display:block;width:28px;height:28px;margin:0 auto 12px;border:3px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.prow{display:flex;gap:8px}
+.last{font-size:12.5px;color:var(--muted);margin-top:8px}
+.list{display:grid;gap:8px}
+.ev{padding:11px 14px;display:flex;gap:12px;align-items:flex-start}
+.ev .tag{font-size:12.5px;font-weight:700;border-radius:8px;padding:3px 8px;white-space:nowrap;margin-top:2px}
+.tag.pickup{background:var(--green-soft);color:var(--green)}
+.tag.gift{background:var(--gold-soft);color:#86601c}
+.tag.sale{background:#e4ecf6;color:#2c5c8f}
+.ev .body{flex:1;min-width:0}
+.ev .who{font-weight:600}
+.ev .meta{font-size:12.5px;color:var(--muted)}
+.ev .del{border:0;background:none;color:var(--muted);padding:4px;border-radius:8px}
+.ev .del:hover{color:var(--red);background:var(--red-soft)}
+.empty-state{text-align:center;color:var(--muted);padding:34px 16px}
+.dayhead{font-size:13px;font-weight:600;color:var(--muted);margin:14px 2px 6px}
+.dayhead:first-child{margin-top:0}
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(30,20,15,.42);z-index:40;display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
+@keyframes fade{from{opacity:0}}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;animation:up .2s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.4}}
+@media(min-width:700px){.scrim{align-items:center}.sheet{border-radius:20px;max-height:86vh}}
+.sheet .sh{padding:16px 18px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.sheet .sh h3{margin:0;font-size:18px;flex:1}
+.sheet .x{border:0;background:var(--grey-soft);width:34px;height:34px;border-radius:50%;font-size:18px;line-height:1}
+.sheet .sb{padding:14px 18px;overflow:auto;flex:1}
+.sheet .sf{padding:12px 18px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;gap:8px;background:var(--card);border-radius:0 0 20px 20px}
+@media(max-width:699px){.sheet .sf{border-radius:0}}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13.5px;color:var(--muted);margin-bottom:4px;font-weight:600}
+.inp{width:100%;border:1px solid var(--line);background:var(--card);border-radius:11px;padding:9px 12px;min-height:44px}
+textarea.inp{min-height:64px;resize:vertical}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--grey-soft);border-radius:12px;padding:3px;gap:3px}
+.seg button{border:0;background:none;border-radius:10px;padding:8px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.qrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.qrow:last-child{border-bottom:0}
+.qrow .lbl{flex:1;min-width:0}
+.qrow .lbl .t{font-weight:600;font-size:15px}
+.qrow .lbl .s{font-size:12.5px;color:var(--muted)}
+.qrow .lbl .s.bad{color:var(--red);font-weight:600}
+.step{display:flex;align-items:center;border:1px solid var(--line);border-radius:11px;background:var(--card);overflow:hidden}
+.step button{border:0;background:none;width:40px;height:40px;font-size:20px;color:var(--red)}
+.step input{width:44px;text-align:center;border:0;background:none;font-weight:700;font-size:16px;font-variant-numeric:tabular-nums;-moz-appearance:textfield;padding:0}
+.step input::-webkit-inner-spin-button{-webkit-appearance:none}
+.step.has{border-color:var(--red);background:var(--red-soft)}
+.sub{font-size:13px;color:var(--muted);margin:2px 0 6px}
+.more{border:0;background:none;color:var(--red);font-weight:600;padding:8px 0}
+.note{font-size:13px;background:var(--amber-soft);color:#7d4d0c;border-radius:10px;padding:8px 10px;margin-top:8px}
+.setrow{padding:12px 14px;display:flex;gap:10px;align-items:center}
+.setrow+.setrow{border-top:1px solid var(--line)}
+.setrow .grow{flex:1;min-width:0}
+.mini{font-size:13px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:12px;z-index:60;font-size:14.5px;box-shadow:0 6px 20px rgba(0,0,0,.2);max-width:calc(100% - 32px);animation:fade .2s}
+.toast.err{background:var(--red)}
+.busy{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:rgba(246,241,233,.55)}
+.busy div{background:var(--card);padding:12px 18px;border-radius:12px;box-shadow:var(--shadow);font-weight:600}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header><div class="hwrap">
+  <div class="brand"><span class="seal">贈</span><span class="bt">贈品記數</span></div>
+  <select class="yearSel" id="yearSel" aria-label="年份"></select>
+  <button class="sync" id="sync" data-act="refresh" title="重新整理"></button>
+</div></header>
+<main id="main"></main>
+<nav class="tabs"><div class="in" id="tabs"></div></nav>
+<div id="layer"></div>
+
+<script>
+/* 示範模式用嘅虛構資料（真資料由 Excel 匯入，唔會寫喺程式碼入面） */
+const DEMO = (() => {
+  const products = [
+    ['C01a','大型日記簿 (綠色簿面)',5],['C04a','A5日記簿 (綠色簿面)',5],['C04b','A5日記簿 (海軍藍色簿面)',5],
+    ['C07','月曆/日記簿手挽袋',25],['C08a','大福字掛曆',30],['C08b','迷你福字曆',50],['C09','圏裝座檯月曆',30],['C10','年曆咭',30],
+    ['R01a','「宏卉遍地」新春利是封',4],['R01b','「花開滿利」新春利是封',4]
+  ].map(([code,name,total]) => ({ code, name, total }));
+  const basic = { C07:1, C08a:1, C08b:1, C09:1, C10:1 };
+  const people = [
+    ['陳太', { ...basic, C01a:1 }, ''], ['李生', basic, ''], ['黃姑娘', { C07:3, C08a:3, C08b:3, C09:3, C10:3 }, ''],
+    ['何伯', { C08b:2 }, '星期六/日唔喺度'], ['張小姐', { ...basic, C04a:1, C04b:1 }, ''], ['劉太', { C07:2, C08a:2, C08b:2, C09:2, C10:2, R01a:2, R01b:2 }, ''],
+    ['周生', basic, ''], ['吳姨', { C08a:2, C08b:2 }, ''], ['鄭生', {}, '今年未確定'], ['林小姐', { ...basic, C04a:1 }, '']
+  ];
+  return { year: String(new Date().getFullYear()), products,
+    people: people.map(([name,,remark]) => ({ name, remark })),
+    orders: people.flatMap(([name, o]) => Object.entries(o).map(([code, qty]) => ({ person:name, code, qty }))) };
+})();
+
+/* ============ 小工具 ============ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = v => { const n = Number(v); return isFinite(n) ? n : 0; };
+const today = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const fmtDate = s => { if (!s) return ''; const [y,m,d] = s.split('-'); return `${+m}月${+d}日`; };
+const hhmm = d => String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+const store = {
+  get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} }
+};
+const TYPE = { pickup:'領取', gift:'送出', sale:'賣出' };
+const COLS = {
+  products:['year','code','name','total','sort'],
+  people:['year','name','remark','sort'],
+  orders:['year','person','code','qty'],
+  events:['id','batch','year','type','person','code','qty','date','remark','createdAt']
+};
+const UNIQUE = { products:['year','code'], people:['year','name'], events:['id'] };
+
+/* ============ 後台：Google Sheet 或示範 ============ */
+function remoteApi(url, passcode){
+  async function call(body){
+    let res;
+    try {
+      res = await fetch(url, { method:'POST', body: JSON.stringify({ ...body, passcode }) });
+    } catch(e){ throw new Error('連唔到 Google Sheet，請檢查網絡或網址'); }
+    let j;
+    try { j = await res.json(); } catch(e){ throw new Error('Google 回覆格式唔啱，請檢查網址同部署設定'); }
+    if (!j.ok) throw new Error(j.error || '未知錯誤');
+    return j.data;
+  }
+  return {
+    demo:false,
+    load: year => call({ action:'load', year }),
+    batch: (year, ops) => call({ action:'batch', year, ops })
+  };
+}
+
+function demoApi(){
+  const KEY = 'gift-demo-v3';
+  const norm = (t, r) => { const o = {}; COLS[t].forEach(c => o[c] = r[c] == null ? '' : String(r[c])); return o; };
+  const match = (r, w) => Object.keys(w).every(k => String(r[k]) === String(w[k]));
+  const key = (t, r) => UNIQUE[t].map(c => String(r[c])).join('|');
+  function apply(d, ops){
+    for (const op of ops){
+      if (!COLS[op.table]) throw new Error('未知資料表');
+      if (op.op === 'insert'){
+        const seen = new Set(UNIQUE[op.table] ? d[op.table].map(r => key(op.table, r)) : []);
+        (op.rows || [op.row]).forEach(r => {
+          const o = norm(op.table, r);
+          if (UNIQUE[op.table]){
+            const k = key(op.table, o);
+            if (seen.has(k)) throw new Error(op.table==='products' ? `${o.year} 年已經有產品 ${o.code}，唔可以重複加入（可能已經匯入過）` : op.table==='people' ? `${o.year} 年已經有「${o.name}」` : '重複記錄，可能已經儲存咗');
+            seen.add(k);
+          }
+          d[op.table].push(o);
+        });
+      }
+      else if (op.op === 'delete') d[op.table] = d[op.table].filter(r => !match(r, op.where));
+      else if (op.op === 'update') d[op.table].forEach(r => { if (match(r, op.where)) Object.entries(op.set).forEach(([k,v]) => { if (COLS[op.table].includes(k)) r[k] = String(v); }); });
+    }
+  }
+  let db = store.get(KEY);
+  if (!db) { db = { products:[], people:[], orders:[], events:[] }; apply(db, demoOps()); }
+  const save = () => store.set(KEY, db);
+  function load(year){
+    const ys = new Set(); const out = {};
+    for (const t in COLS){ db[t].forEach(r => r.year && ys.add(r.year)); out[t] = db[t].filter(r => r.year === String(year)); }
+    out.years = [...ys].sort();
+    return JSON.parse(JSON.stringify(out));
+  }
+  return {
+    demo:true,
+    async load(year){ await new Promise(r=>setTimeout(r,80)); return load(year); },
+    async batch(year, ops){
+      await new Promise(r=>setTimeout(r,120));
+      const copy = JSON.parse(JSON.stringify(db));
+      apply(copy, ops);
+      db = copy; save();
+      return load(year);
+    },
+    reset(){ store.del(KEY); }
+  };
+}
+
+function demoOps(){
+  const y = DEMO.year;
+  return [
+    { op:'insert', table:'products', rows: DEMO.products.map((p,i) => ({ year:y, ...p, sort:i+1 })) },
+    { op:'insert', table:'people',   rows: DEMO.people.map((p,i) => ({ year:y, ...p, sort:i+1 })) },
+    { op:'insert', table:'orders',   rows: DEMO.orders.map(o => ({ year:y, ...o })) }
+  ];
+}
+
+/* ============ 由 Excel 匯入 ============ */
+function loadXLSX(){
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, bad) => {
+    const sc = document.createElement('script'); sc.src = 'vendor/xlsx.mini.min.js';
+    sc.onload = ok; sc.onerror = () => bad(new Error('載入唔到 Excel 讀取工具，請檢查網絡'));
+    document.head.appendChild(sc);
+  });
+}
+function parseWorkbook(wb){
+  const years = wb.SheetNames.filter(n => /^\d{4}$/.test(n.trim())).map(n => n.trim()).sort();
+  const latest = years[years.length-1];
+  const pad = n => String(n).padStart(2,'0');
+  return years.map(y => {
+    const ws = wb.Sheets[wb.SheetNames.find(n => n.trim() === y)];
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+    const hiddenRow = r => !!((ws['!rows']||[])[r] || {}).hidden;
+    const hiddenCol = c => !!((ws['!cols']||[])[c] || {}).hidden;
+    const cell = (r, c) => ws[XLSX.utils.encode_cell({ r, c })];
+    const text = x => x == null ? '' : String(x.w ?? x.v ?? '').trim();
+    const qtyOf = x => {
+      if (!x || x.v == null || x.v === '') return 0;
+      if (x.t === 'n') return Math.round(x.v);
+      const s = String(x.v).trim();
+      return /^\d+$/.test(s) ? Number(s) : null;     // null = 文字，例如「3*」
+    };
+    const dateOf = x => {
+      if (!x || x.v == null) return '';
+      if (x.t === 'd' && x.v instanceof Date) return `${x.v.getFullYear()}-${pad(x.v.getMonth()+1)}-${pad(x.v.getDate())}`;
+      if (x.t === 'n' && XLSX.SSF.is_date(x.z || '')){ const d = XLSX.SSF.parse_date_code(x.v); return `${d.y}-${pad(d.m)}-${pad(d.d)}`; }
+      return '';
+    };
+    const products = [], hiddenNames = [], seen = new Set();
+    for (let c = 3; c <= range.e.c; c++){
+      const h = text(cell(0, c)); if (!h || hiddenCol(c)) continue;
+      const m = h.match(/^([A-Za-z]\d+[A-Za-z]?)\s*(.*)$/);
+      let code = m ? m[1] : 'P' + (c+1), name = m ? (m[2] || m[1]) : h;
+      if (seen.has(code)) code += '-' + (c+1); seen.add(code);
+      products.push({ c, code, name: name.trim(), total: qtyOf(cell(1, c)) || 0 });
+    }
+    const people = [], orders = [], events = [];
+    const isPast = y !== latest;
+    for (let r = 2; r <= range.e.r; r++){
+      const name = text(cell(r, 2));
+      if (!name || name === '總數' || name === '剩餘') continue;
+      if (hiddenRow(r)){ hiddenNames.push(name); continue; }
+      const a = cell(r, 0), date = dateOf(a), aText = date ? '' : text(a);
+      if (name.toLowerCase().replace(/\s/g,'') === 'sellout'){
+        products.forEach(p => { const q = qtyOf(cell(r, p.c)); if (q) events.push({ id:`x${y}-sale-${p.code}`, batch:`x${y}-sale`, type:'sale', person: aText || '（Excel sell out）', code:p.code, qty:q, date:'', remark:'由 Excel「sell out」匯入' }); });
+        continue;
+      }
+      let remark = aText.toLowerCase() === 'no need' ? '今年唔要' : aText;
+      const notes = new Set(), mine = [];
+      products.forEach(p => { const x = cell(r, p.c), q = qtyOf(x); if (q === null) notes.add(text(x)); else if (q) mine.push([p.code, q]); });
+      notes.forEach(n => remark = (remark ? remark + '；' : '') + `Excel 寫「${n}」，當 0`);
+      people.push({ name, remark, sort: people.length + 1 });
+      mine.forEach(([code, qty]) => orders.push({ person:name, code, qty }));
+      const picked = date || (isPast && remark !== '今年唔要');
+      if (picked) mine.forEach(([code, qty]) => events.push({ id:`x${y}-${r}-${code}`, batch:`x${y}-${r}`, type:'pickup', person:name, code, qty, date, remark: date ? '' : '由 Excel 匯入（冇記日期）' }));
+    }
+    return { year:y, isPast, products: products.map(({ c, ...p }) => p), people, orders, events, hiddenNames };
+  });
+}
+function importOps(list){
+  const ops = [], now = new Date().toISOString();
+  list.forEach(Y => {
+    const y = Y.year;
+    ops.push({ op:'insert', table:'products', rows: Y.products.map((p,i) => ({ year:y, ...p, sort:i+1 })) });
+    if (Y.people.length) ops.push({ op:'insert', table:'people', rows: Y.people.map(p => ({ year:y, ...p })) });
+    if (Y.orders.length) ops.push({ op:'insert', table:'orders', rows: Y.orders.map(o => ({ year:y, ...o })) });
+    if (Y.events.length) ops.push({ op:'insert', table:'events', rows: Y.events.map(e => ({ year:y, createdAt:now, ...e })) });
+  });
+  return ops;
+}
+function pickExcel(){
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xlsm,.xls';
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    busy(true, '讀緊 Excel…');
+    try {
+      await loadXLSX();
+      const wb = XLSX.read(await f.arrayBuffer(), { cellStyles:true });
+      const list = parseWorkbook(wb);
+      busy(false);
+      if (!list.length) return toast('個 Excel 入面搵唔到用年份做名嘅工作表（例如「2026」）', true);
+      openImport(list);
+    } catch(e){ busy(false); toast('讀唔到呢個 Excel：' + e.message, true); }
+  };
+  inp.click();
+}
+function openImport(list){
+  const body = `<div class="sub">揀要匯入邊幾年。已經有資料嘅年份會跳過。</div>` + list.map((Y, i) => {
+    const has = S.data.years.includes(Y.year);
+    const picks = Y.events.filter(e => e.type==='pickup').length, sales = Y.events.filter(e => e.type==='sale').reduce((s,e)=>s+e.qty,0);
+    return `<label class="qrow" style="cursor:pointer;align-items:flex-start"><div class="lbl"><div class="t">${esc(Y.year)} 年${has ? '（已經有，跳過）' : ''}</div>
+      <div class="s">${Y.products.length} 款產品 · ${Y.people.length} 位客 · ${Y.orders.reduce((s,o)=>s+o.qty,0)} 件預留${sales ? ` · 賣出 ${sales} 件` : ''}</div>
+      <div class="s">${Y.isPast ? '舊年：有日期當嗰日攞晒，冇日期當攞晒（日期留空）' : (picks ? '有填日期嘅當已經攞晒，其他當未攞' : '最新一年：當全部未攞')}</div>
+      ${Y.hiddenNames.length ? `<div class="s">收埋咗嘅行唔會匯入：${esc(Y.hiddenNames.join('、'))}</div>` : ''}</div>
+      <input type="checkbox" data-imp="${i}" ${has ? 'disabled' : 'checked'} style="width:22px;height:22px;flex:none;margin-top:3px"></label>`;
+  }).join('') + `<div class="note">Excel 入面收埋咗嘅欄同行（即係嗰年冇份）會跳過。數字寫成文字（例如「3*」）會當 0，並喺備註寫低。</div>`;
+  openSheet('由 Excel 匯入', body, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" id="impBtn">匯入</button>`);
+  $('#impBtn').onclick = async () => {
+    const chosen = [...document.querySelectorAll('[data-imp]:checked')].map(x => list[+x.dataset.imp]);
+    if (!chosen.length) return toast('未揀任何年份', true);
+    const latest = chosen[chosen.length-1].year;
+    if (await commit(importOps(chosen), `已匯入 ${chosen.map(c=>c.year).join('、')} 年`)){
+      closeSheet();
+      if (!S.data.products.length || !S.data.years.includes(S.year)){ S.year = latest; store.set('gift-year', latest); }
+      refresh();
+    }
+  };
+}
+
+/* ============ 狀態 ============ */
+const S = {
+  api:null, year: store.get('gift-year') || String(new Date().getFullYear()),
+  data:{ years:[], products:[], people:[], orders:[], events:[] },
+  loaded:false, syncedAt:null,
+  tab: store.get('gift-tab') || 'overview',
+  filter:'all', q:'', evFilter:'all', evQ:'', status:'ok', open:new Set()
+};
+
+function connect(){
+  const cfg = store.get('gift-conn');
+  S.api = cfg && cfg.url ? remoteApi(cfg.url, cfg.passcode) : demoApi();
+}
+
+async function fetchLatest(){
+  let d = await S.api.load(S.year);
+  if (!d.years.includes(S.year) && d.years.length){
+    S.year = d.years[d.years.length-1]; store.set('gift-year', S.year);
+    d = await S.api.load(S.year);
+  }
+  S.data = d; S.loaded = true; S.syncedAt = new Date();
+}
+
+async function refresh(){
+  setSync('busy');
+  try { await fetchLatest(); setSync('ok'); }
+  catch(e){ setSync('err'); toast(e.message, true); }
+  render();
+}
+
+async function commit(ops, msg, undo){
+  busy(true); setSync('busy');
+  try {
+    S.data = await S.api.batch(S.year, ops);
+    S.syncedAt = new Date(); setSync('ok'); if (msg) toast(msg, false, undo);
+    return true;
+  } catch(e){ setSync('err'); toast('儲存唔到：' + e.message, true); return false; }
+  finally { busy(false); render(); }
+}
+
+function setSync(s){
+  S.status = s; const el = $('#sync');
+  const refreshIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>';
+  el.className = 'sync' + (S.api && S.api.demo ? ' demo' : '') + (s==='busy' ? ' busy' : s==='err' ? ' err' : '');
+  const label = S.api && S.api.demo ? '示範模式' : s==='busy' ? '同步緊…' : s==='err' ? '連接有問題' : S.syncedAt ? '已同步 ' + hhmm(S.syncedAt) : '';
+  el.innerHTML = esc(label) + refreshIcon;
+}
+
+/* ============ 計數 ============ */
+function compute(){
+  const d = S.data;
+  const products = [...d.products].sort((a,b)=>num(a.sort)-num(b.sort));
+  const people = [...d.people].sort((a,b)=>num(a.sort)-num(b.sort));
+  const ord = {}, pick = {}, lastPick = {}, extras = {};
+  d.orders.forEach(o => { (ord[o.person] ||= {})[o.code] = (ord[o.person][o.code]||0) + num(o.qty); });
+  d.events.forEach(e => {
+    if (e.type === 'pickup'){
+      (pick[e.person] ||= {})[e.code] = (pick[e.person][e.code]||0) + num(e.qty);
+      if (!lastPick[e.person] || e.date > lastPick[e.person]) lastPick[e.person] = e.date;
+    } else if (e.person){
+      const x = (extras[e.person] ||= { gift:{}, sale:{} });
+      x[e.type][e.code] = (x[e.type][e.code]||0) + num(e.qty);
+    }
+  });
+  const P = {};
+  products.forEach(p => P[p.code] = { ...p, total:num(p.total), ordered:0, picked:0, pending:0, committed:0, gift:0, sale:0 });
+  const names = new Set([...Object.keys(ord), ...Object.keys(pick)]);
+  names.forEach(n => {
+    const codes = new Set([...Object.keys(ord[n]||{}), ...Object.keys(pick[n]||{})]);
+    codes.forEach(c => {
+      const o = (ord[n]||{})[c]||0, k = (pick[n]||{})[c]||0;
+      if (!P[c]) return;
+      P[c].ordered += o; P[c].picked += k;
+      P[c].pending += Math.max(0, o-k); P[c].committed += Math.max(o, k);
+    });
+  });
+  d.events.forEach(e => { if (P[e.code] && (e.type==='gift'||e.type==='sale')) P[e.code][e.type] += num(e.qty); });
+  Object.values(P).forEach(p => {
+    p.avail = p.total - p.committed - p.gift - p.sale;   // 仲可以再分
+    p.onHand = p.total - p.picked - p.gift - p.sale;     // 實際手上
+  });
+  const RANK = { none:0, part:1, done:2, empty:3 };
+  const persons = people.map((pp, idx) => {
+    const o = ord[pp.name]||{}, k = pick[pp.name]||{};
+    const codes = products.map(p=>p.code).filter(c => (o[c]||0) > 0 || (k[c]||0) > 0);
+    const totO = codes.reduce((s,c)=>s+(o[c]||0),0);
+    const totK = codes.reduce((s,c)=>s+(k[c]||0),0);
+    const pend = codes.reduce((s,c)=>s+Math.max(0,(o[c]||0)-(k[c]||0)),0);
+    let st = 'empty';
+    if (totO > 0) st = pend === 0 ? 'done' : (codes.some(c => (k[c]||0) > 0) ? 'part' : 'none');
+    return { ...pp, idx, ord:o, pick:k, codes, totO, totK, pend, st, last:lastPick[pp.name]||'', extras:extras[pp.name] };
+  }).sort((a,b) => RANK[a.st]-RANK[b.st] || a.idx-b.idx);
+  return { products, P, persons };
+}
+
+/* ============ 畫面 ============ */
+const ICONS = {
+  overview:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
+  people:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7M18.5 14.8c1.6.8 2.6 2.5 3 5.2"/></svg>',
+  log:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>'
+};
+const TABS = [['overview','總覽'],['people','客人'],['log','記錄'],['settings','設定']];
+
+function render(){
+  $('#tabs').innerHTML = TABS.map(([k,l]) => `<button class="${S.tab===k?'on':''}" data-tab="${k}">${ICONS[k]}${l}</button>`).join('');
+  const ys = new Set(S.data.years); ys.add(S.year);
+  $('#yearSel').innerHTML = [...ys].sort().map(y => `<option value="${esc(y)}" ${y===S.year?'selected':''}>${esc(y)} 年</option>`).join('');
+  setSync(S.status);
+  let h = '';
+  const newest = S.data.years.length ? S.data.years[S.data.years.length-1] : S.year;
+  if (S.loaded && S.year < newest) h += `<div class="banner old">你而家睇緊 <b>${esc(S.year)} 年</b>嘅舊記錄。今年嘅喺右上角揀返 ${esc(newest)} 年。</div>`;
+  if (S.api.demo) h += `<div class="banner"><b>示範模式</b>：資料只會儲喺呢部機。去「設定」連接 Google Sheet 之後，就可以喺任何地方同步。</div>`;
+  if (!S.loaded){
+    h += S.status === 'err'
+      ? `<div class="card empty-state">載入唔到資料。<br><br><button class="btn primary" data-act="refresh">再試一次</button></div>`
+      : `<div class="loading">載入緊資料…</div>`;
+    $('#main').innerHTML = h; return;
+  }
+  const C = compute();
+  if (!S.data.products.length && S.tab !== 'settings') h += emptyYear();
+  else h += ({ overview:viewOverview, people:viewPeople, log:viewLog, settings:viewSettings })[S.tab](C);
+  $('#main').innerHTML = h;
+}
+
+function emptyYear(){
+  const first = !S.data.years.length;
+  return `<div class="card empty-state">
+    <div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:6px">${esc(S.year)} 年仲未有資料</div>
+    <div style="margin-bottom:14px">${first ? '揀返你平時用嚟記數嘅 Excel 檔案，就可以將產品、客人同預留數匯入。' : '可以由 Excel 匯入，或者去「設定」由上一年複製。'}</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn primary" data-act="excel">由 Excel 匯入</button>${first ? '' : `<button class="btn" data-tab="settings">去設定</button>`}</div>
+  </div>`;
+}
+
+function viewOverview(C){
+  const ps = Object.values(C.P);
+  const pendPeople = C.persons.filter(p => p.pend > 0).length;
+  const pendQty = ps.reduce((s,p)=>s+p.pending,0);
+  const availQty = ps.reduce((s,p)=>s+Math.max(0,p.avail),0);
+  const neg = ps.filter(p => p.avail < 0).length;
+  let h = `<div class="stats">
+    <div class="card stat"><div class="n">${pendPeople}</div><div class="l">位客未攞晒</div></div>
+    <div class="card stat"><div class="n">${pendQty}</div><div class="l">件未攞</div></div>
+    <div class="card stat ${neg?'warn':''}"><div class="n">${availQty}</div><div class="l">${neg?`件可再分 · ${neg} 款超額`:'件仲可以再分'}</div></div>
+  </div>
+  <div class="actions">
+    <button class="btn gold grow" data-act="event" data-type="sale">＋ 記賣出</button>
+    <button class="btn grow" data-act="event" data-type="gift">＋ 記額外送出</button>
+  </div>
+  <h2>產品存貨</h2>
+  <div class="legend"><span style="--c:var(--green)">已攞</span><span style="--c:#e0b25a">已訂未攞</span><span style="--c:#b5a594">送出／賣出</span></div>
+  <div class="plist">`;
+  C.products.forEach(pr => {
+    const p = C.P[pr.code], T = Math.max(p.total, p.committed + p.gift + p.sale, 1);
+    const w = x => (100 * x / T).toFixed(2) + '%';
+    const pickedOk = p.committed - p.pending;
+    h += `<div class="card prod" data-act="prod-view" data-code="${esc(p.code)}" role="button" tabindex="0">
+      <div class="top"><span class="code">${esc(p.code)}</span><span class="pname">${esc(p.name)}</span>
+        <span class="avail ${p.avail<0?'neg':p.avail===0?'zero':''}"><span class="n">${p.avail}</span><span class="l">${p.avail<0?'超咗':'可再分'}</span></span></div>
+      <div class="bar"><i class="b-pick" style="width:${w(pickedOk)}"></i><i class="b-pend" style="width:${w(p.pending)}"></i><i class="b-out" style="width:${w(p.gift+p.sale)}"></i></div>
+      <div class="nums"><span>總數 <b>${p.total}</b></span><span>已訂 <b>${p.ordered}</b></span><span>已攞 <b>${p.picked}</b></span><span>未攞 <b>${p.pending}</b></span>${p.gift?`<span>送出 <b>${p.gift}</b></span>`:''}${p.sale?`<span>賣出 <b>${p.sale}</b></span>`:''}<span>手上 <b>${p.onHand}</b></span></div>
+    </div>`;
+  });
+  return h + `</div>`;
+}
+
+function personCard(p, C){
+  const B = { done:'攞晒', part:'攞咗部分', none:'未攞', empty:'冇訂' };
+  const nm = c => esc((C.P[c]||{}).name || c);
+  const owe = p.codes.filter(c => (p.ord[c]||0) > (p.pick[c]||0));
+  const got = p.codes.filter(c => (p.pick[c]||0) > 0);
+  const isOpen = S.open.has(p.name);
+  let h = `<div class="card person">
+    <div class="top"><span class="nm">${esc(p.name)}</span><span class="badge ${p.st}">${B[p.st]}${p.st==='part'?` · 欠 ${p.pend}`:''}</span></div>
+    ${p.remark ? `<div class="remark">${esc(p.remark)}</div>` : ''}`;
+  if (owe.length){
+    h += `<div class="items">${owe.map(c => {
+      const o = p.ord[c]||0, k = p.pick[c]||0;
+      return k ? `<span class="it owe">${nm(c)} <span class="q">欠 ${o-k}</span><small>/ ${o}</small></span>` : `<span class="it">${nm(c)} <span class="q">×${o}</span></span>`;
+    }).join('')}</div>`;
+  } else if (p.st === 'done'){
+    h += `<div class="doneLine">✓ 全部攞晒${p.last ? ` · ${fmtDate(p.last)}` : ''}</div>`;
+  } else h += '<div style="height:8px"></div>';
+  const recs = batches().filter(b => b.person === p.name);
+  if (recs.length){
+    const nP = recs.filter(b => b.type==='pickup').length;
+    const label = got.length ? `已攞 ${p.totK} 件（${nP} 次）${p.last && p.st!=='done' ? ` · 最後 ${fmtDate(p.last)}` : ''}` : `${recs.length} 條記錄`;
+    h += `<button class="toggle" data-act="toggle" data-name="${esc(p.name)}">${isOpen?'▾':'▸'} ${label}${isOpen?'':' · 撳開可以改備註'}</button>`;
+    if (isOpen) h += `<div class="recs">${recs.map(b => `<button class="rec" data-act="rec-edit" data-batch="${esc(b.batch)}">
+      <span class="rd"><span class="tag ${b.type}">${TYPE[b.type]}</span>${b.date ? fmtDate(b.date) : '冇日期'}</span>
+      <span class="ri">${b.items.map(e => `${nm(e.code)} ×${num(e.qty)}`).join('、')}${b.remark ? `<span class="rr">備註：${esc(b.remark)}</span>` : `<span class="rr add">＋ 加備註</span>`}</span>
+      <span class="pen">✎</span></button>`).join('')}</div>`;
+  }
+  if (p.extras){
+    const parts = [];
+    for (const [t, lbl] of [['gift','另外送咗'],['sale','買咗']]){
+      const list = Object.entries(p.extras[t]).map(([c,q]) => `${nm(c)} ×${q}`);
+      if (list.length) parts.push(`${lbl}：${list.join('、')}`);
+    }
+    if (parts.length) h += `<div class="extra" style="margin-top:8px">${parts.join('<br>')}</div>`;
+  }
+  h += `<div class="prow" style="margin-top:10px">`;
+  if (p.pend > 0) h += `<button class="btn primary sm grow" data-act="pick-all" data-name="${esc(p.name)}">全部攞晒</button><button class="btn sm" data-act="pickup" data-name="${esc(p.name)}">部分／改數</button>`;
+  else h += `<button class="btn sm grow" data-act="pickup" data-name="${esc(p.name)}">加單即攞</button>`;
+  h += `<button class="btn sm" data-act="person-edit" data-name="${esc(p.name)}">改訂單</button></div></div>`;
+  return h;
+}
+
+function viewPeople(C){
+  const q = S.q.trim().toLowerCase();
+  const found = C.persons.filter(p => !q || p.name.toLowerCase().includes(q) || (p.remark||'').toLowerCase().includes(q));
+  const cnt = { all:found.length, none:0, part:0, done:0, empty:0 };
+  found.forEach(p => cnt[p.st]++);
+  const F = [['all','全部'],['none','未攞'],['part','攞咗部分'],['done','攞晒'],['empty','冇訂']];
+  const list = found.filter(p => S.filter==='all' || p.st===S.filter);
+  let h = `<div class="toolbar"><input class="search" id="q" placeholder="搵客人…" value="${esc(S.q)}"><button class="btn primary" data-act="person-new">＋ 新客人</button></div>
+  <div class="chips">${F.map(([k,l]) => `<button class="chip ${S.filter===k?'on':''}" data-filter="${k}">${l}<span class="c">${cnt[k]}</span></button>`).join('')}</div>
+  ${C.persons.some(p=>p.pend>0) ? `<div class="toolrow"><button class="btn sm ghost" data-act="copy-list">📋 複製未攞名單</button></div>` : ''}
+  <div class="list">`;
+  if (!list.length) h += `<div class="card empty-state">冇符合嘅客人</div>`;
+  list.forEach(p => h += personCard(p, C));
+  return h + `</div>`;
+}
+
+function batches(){
+  const m = new Map();
+  S.data.events.forEach(e => {
+    const k = e.batch || e.id;
+    if (!m.has(k)) m.set(k, { batch:k, type:e.type, person:e.person, date:e.date, remark:e.remark, createdAt:e.createdAt, items:[] });
+    m.get(k).items.push(e);
+  });
+  return [...m.values()].sort((a,b) => (b.date||'').localeCompare(a.date||'') || (b.createdAt||'').localeCompare(a.createdAt||''));
+}
+
+function viewLog(C){
+  const F = [['all','全部'],['pickup','領取'],['sale','賣出'],['gift','送出']];
+  const q = S.evQ.trim().toLowerCase();
+  const found = batches().filter(b => !q || (b.person||'').toLowerCase().includes(q) || (b.remark||'').toLowerCase().includes(q));
+  const list = found.filter(b => S.evFilter==='all' || b.type===S.evFilter);
+  let h = `<div class="toolbar"><input class="search" id="evq" placeholder="搵人名或備註…" value="${esc(S.evQ)}"></div>
+  <div class="chips">${F.map(([k,l]) => `<button class="chip ${S.evFilter===k?'on':''}" data-evfilter="${k}">${l}<span class="c">${k==='all'?found.length:found.filter(b=>b.type===k).length}</span></button>`).join('')}</div>`;
+  if (!list.length) return h + `<div class="card empty-state">${S.data.events.length ? '冇符合嘅記錄' : '仲未有任何領取、賣出或送出記錄'}</div>`;
+  let lastDay = null;
+  h += `<div class="list">`;
+  list.forEach(b => {
+    if (b.date !== lastDay){ h += `<div class="dayhead">${b.date ? fmtDate(b.date) : '未填日期'}</div>`; lastDay = b.date; }
+    const cls = b.type==='pickup' ? 'done' : '';
+    const items = b.items.map(e => `<span class="it ${cls}">${esc((C.P[e.code]||{}).name || e.code)} <span class="q">×${num(e.qty)}</span></span>`).join('');
+    h += `<div class="card ev" data-act="rec-edit" data-batch="${esc(b.batch)}" role="button" tabindex="0"><span class="tag ${b.type}">${TYPE[b.type]||b.type}</span>
+      <div class="body"><div class="who">${esc(b.person || '（冇寫名）')}</div><div class="items">${items}</div>${b.remark?`<div class="meta">${esc(b.remark)}</div>`:''}</div>
+      <span class="pen" aria-hidden="true">✎</span></div>`;
+  });
+  return h + `</div>`;
+}
+
+function viewSettings(C){
+  const cfg = store.get('gift-conn') || {};
+  let h = `<h2>連接 Google Sheet</h2>
+  <div class="card" style="padding:14px">
+    <div class="field"><label>網頁應用程式網址（Apps Script）</label><input class="inp" id="cUrl" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(cfg.url||'')}"></div>
+    <div class="field"><label>密碼</label><input class="inp" id="cPass" type="password" value="${esc(cfg.passcode||'')}"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" data-act="conn-save">連接並儲存</button>
+      ${cfg.url ? `<button class="btn" data-act="conn-clear">中斷連接（返去示範）</button>` : ''}
+    </div>
+    <div class="mini" style="margin-top:10px">${S.api.demo ? '而家係示範模式。' : '✓ 已連接 Google Sheet。Google Sheet 入面嘅「總表」會自動更新。'}網址同密碼只會記喺呢部機，每部機第一次用都要輸入一次。</div>
+  </div>
+  <h2>${esc(S.year)} 年產品</h2>
+  <div class="card">`;
+  if (!C.products.length) h += `<div class="setrow mini">仲未有產品</div>`;
+  C.products.forEach(pr => {
+    const p = C.P[pr.code];
+    h += `<div class="setrow"><span class="code">${esc(p.code)}</span><div class="grow"><div style="font-weight:600">${esc(p.name)}</div><div class="mini">總數 ${p.total} · 已訂 ${p.ordered}</div></div><button class="btn sm" data-act="prod-edit" data-code="${esc(p.code)}">修改</button></div>`;
+  });
+  h += `</div><div class="actions"><button class="btn grow" data-act="prod-new">＋ 加產品</button></div>
+  <h2>年份</h2>
+  <div class="card" style="padding:14px">
+    <div class="mini" style="margin-bottom:10px">新一年開始時，可以由「${esc(S.year)} 年」複製產品、客人同訂單數做起點，之後再改。</div>
+    <button class="btn" data-act="year-new" ${C.products.length?'':'disabled'}>開新一年…</button>
+  </div>`;
+  h += `<h2>由 Excel 匯入</h2>
+  <div class="card" style="padding:14px">
+    <div class="mini" style="margin-bottom:10px">揀返你個記數 Excel（每年一張、用年份做名嘅工作表），可以一次過匯入幾年嘅產品、客人、預留數同舊記錄。已經有嘅年份會自動跳過。</div>
+    <button class="btn" data-act="excel">揀 Excel 檔案…</button>
+  </div>`;
+  if (S.api.demo) h += `<h2>示範資料</h2><div class="card" style="padding:14px"><button class="btn danger" data-act="demo-reset">清除示範資料，重新開始</button></div>`;
+  return h;
+}
+
+/* ============ 彈出表單 ============ */
+let sheetState = null;
+function openSheet(title, body, foot){
+  $('#layer').innerHTML = `<div class="scrim" data-close="1"><div class="sheet" role="dialog" aria-label="${esc(title)}">
+    <div class="sh"><h3>${esc(title)}</h3><button class="x" data-close="1" aria-label="關閉">×</button></div>
+    <div class="sb">${body}</div><div class="sf">${foot}</div></div></div>`;
+}
+function closeSheet(){ $('#layer').innerHTML = ''; sheetState = null; }
+
+function stepper(key, val){
+  return `<div class="step ${val>0?'has':''}" data-step="${esc(key)}"><button type="button" data-d="-1" aria-label="減">−</button><input inputmode="numeric" value="${val}" aria-label="數量"><button type="button" data-d="1" aria-label="加">＋</button></div>`;
+}
+function readSteps(root){
+  const out = {};
+  root.querySelectorAll('[data-step]').forEach(s => { const v = Math.max(0, Math.floor(num(s.querySelector('input').value))); if (v) out[s.dataset.step] = v; });
+  return out;
+}
+
+/* 先同 Google 拎最新數據（防止兩部機同時記重複） */
+async function withLatest(label){
+  if (S.api.demo) return true;
+  busy(true, label || '更新緊…'); setSync('busy');
+  try { await fetchLatest(); setSync('ok'); return true; }
+  catch(e){ setSync('err'); toast(e.message, true); return false; }
+  finally { busy(false); render(); }
+}
+const pickSnap = name => JSON.stringify(S.data.events.filter(e => e.type==='pickup' && e.person===name).map(e=>e.id).sort());
+
+/* 一撳全部攞晒 */
+async function pickAll(name){
+  if (!await withLatest()) return;
+  const C = compute(); const p = C.persons.find(x => x.name === name); if (!p) return;
+  if (p.pend <= 0) return toast(`${name} 已經攞晒（可能啱啱有人記咗）`);
+  const batch = uid(), now = new Date().toISOString(), date = today();
+  const rows = p.codes.filter(c => (p.ord[c]||0) > (p.pick[c]||0)).map(c => ({ id:uid(), batch, year:S.year, type:'pickup', person:name, code:c, qty:(p.ord[c]||0)-(p.pick[c]||0), date, remark:'', createdAt:now }));
+  const total = rows.reduce((s,r)=>s+r.qty,0);
+  await commit([{ op:'insert', table:'events', rows }], `已記低 ${name} 攞晒 ${total} 件`, [
+    ['加備註', () => openRecord(batch, true)],
+    ['復原', () => commit([{ op:'delete', table:'events', where:{ year:S.year, batch } }], '已復原')]
+  ]);
+}
+
+/* 記領取（部分／改數／加單） */
+async function openPickup(name, fresh){
+  if (!fresh && !await withLatest()) return;
+  const C = compute(); const p = C.persons.find(x => x.name === name); if (!p) return;
+  const rows = C.products.map(pr => {
+    const o = p.ord[pr.code]||0, k = p.pick[pr.code]||0, rem = Math.max(0, o-k);
+    return { code:pr.code, name:pr.name, o, k, rem, avail:C.P[pr.code].avail };
+  });
+  const mine = rows.filter(r => r.rem > 0), others = rows.filter(r => r.rem === 0);
+  const row = (r, v) => `<div class="qrow" data-code="${esc(r.code)}"><div class="lbl"><div class="t">${esc(r.name)}</div><div class="s" data-info></div></div>${stepper(r.code, v)}</div>`;
+  const body = `
+    <div class="field"><label>日期</label><input class="inp" type="date" id="pDate" value="${today()}"></div>
+    ${mine.length ? `<div class="sub">預設係佢未攞嘅數，今次攞幾多就改做幾多</div>${mine.map(r=>row(r, r.rem)).join('')}` : `<div class="sub">佢訂嘅已經攞晒。如果佢加單，喺下面揀產品，多出嘅數會自動加入訂單。</div>`}
+    <div id="others" class="${mine.length?'hidden':''}">${mine.length?'<div class="sub" style="margin-top:12px">其他產品（加單）</div>':''}${others.map(r=>row(r,0)).join('')}</div>
+    ${mine.length && others.length ? `<button class="more" data-act="show-others">＋ 加單／其他產品</button>` : ''}
+    <div class="field" style="margin-top:12px"><label>備註（可以留空）</label><input class="inp" id="pRemark" placeholder="例如：佢老公代攞"></div>
+    <div id="pNote"></div>`;
+  openSheet(`${name} · 記領取`, body, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" data-act="pickup-save">確認領取</button>`);
+  sheetState = { kind:'pickup', name, rows, snap:pickSnap(name) };
+  updatePickupNote();
+}
+function updatePickupNote(){
+  if (!sheetState || sheetState.kind !== 'pickup') return;
+  const v = readSteps($('#layer')); let extra = [];
+  sheetState.rows.forEach(r => {
+    const q = v[r.code]||0, over = q - r.rem;
+    const info = $(`#layer .qrow[data-code="${CSS.escape(r.code)}"] [data-info]`);
+    const base = r.o ? `訂 ${r.o} · 已攞 ${r.k}` : '冇訂';
+    if (over > 0){ extra.push(`${r.name} +${over}`); info.textContent = `${base} · 加單 ${over}（仲可以加 ${r.avail}）`; info.classList.toggle('bad', over > r.avail); }
+    else { info.textContent = base; info.classList.remove('bad'); }
+  });
+  $('#pNote').innerHTML = extra.length ? `<div class="note">會自動加單：${esc(extra.join('、'))}</div>` : '';
+}
+async function savePickup(){
+  const st = sheetState, v = readSteps($('#layer')); const date = $('#pDate').value, remark = $('#pRemark').value.trim();
+  if (!Object.keys(v).length) return toast('未揀任何數量', true);
+  // 儲存前再對一次，睇吓有冇人喺第二部機記咗
+  if (!S.api.demo){
+    if (!await withLatest('檢查緊…')) return;
+    if (pickSnap(st.name) !== st.snap){
+      toast(`啱啱有人喺第二部機記咗 ${st.name} 嘅領取，已經更新，請再確認一次`, true);
+      return openPickup(st.name, true);
+    }
+  }
+  const batch = uid(), now = new Date().toISOString(), y = S.year, ops = [];
+  const evRows = Object.entries(v).map(([code, qty]) => ({ id:uid(), batch, year:y, type:'pickup', person:st.name, code, qty, date, remark, createdAt:now }));
+  ops.push({ op:'insert', table:'events', rows: evRows });
+  st.rows.forEach(r => {
+    const q = v[r.code]||0, over = q - r.rem;
+    if (over > 0){
+      ops.push({ op:'delete', table:'orders', where:{ year:y, person:st.name, code:r.code } });
+      ops.push({ op:'insert', table:'orders', rows:[{ year:y, person:st.name, code:r.code, qty:r.o + over }] });
+    }
+  });
+  const total = evRows.reduce((s,r)=>s+r.qty,0);
+  if (await commit(ops, `已記低 ${st.name} 領取 ${total} 件`)) closeSheet();
+}
+
+/* 新客人 / 改訂單 */
+function openPerson(name){
+  const C = compute(); const p = name ? C.persons.find(x => x.name === name) : null;
+  const hasEv = p && S.data.events.some(e => e.person === name);
+  const body = `
+    <div class="field"><label>名</label><input class="inp" id="eName" value="${esc(p?p.name:'')}" placeholder="例如：陳太"></div>
+    <div class="field"><label>備註</label><input class="inp" id="eRemark" value="${esc(p?p.remark:'')}" placeholder="例如：星期六/日放假"></div>
+    <div class="sub">預留／訂咗幾多</div>
+    ${C.products.map(pr => {
+      const o = p ? (p.ord[pr.code]||0) : 0, k = p ? (p.pick[pr.code]||0) : 0, a = C.P[pr.code].avail;
+      return `<div class="qrow"><div class="lbl"><div class="t">${esc(pr.name)}</div><div class="s">${k?`已攞 ${k} · `:''}${a>0?`仲可以加多 ${a} 件`:a===0?'冇得再加':`已經超咗 ${-a} 件`}</div></div>${stepper(pr.code, o)}</div>`;
+    }).join('')}
+    ${p ? `<div style="margin-top:16px"><button class="btn danger sm" data-act="person-del" ${hasEv?'disabled':''}>刪除呢位客人</button>${hasEv?'<div class="mini" style="margin-top:6px">佢有領取記錄，要先喺「記錄」刪除先可以刪除客人。</div>':''}</div>` : ''}`;
+  openSheet(p ? `改訂單 · ${p.name}` : '新客人', body, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" data-act="person-save">儲存</button>`);
+  sheetState = { kind:'person', name: p ? p.name : null };
+}
+async function savePerson(){
+  const st = sheetState, y = S.year;
+  const name = $('#eName').value.trim(), remark = $('#eRemark').value.trim(), v = readSteps($('#layer'));
+  if (!name) return toast('請填名', true);
+  if (name !== st.name && S.data.people.some(p => p.name === name)) return toast('已經有同名嘅客人', true);
+  const ops = [];
+  if (st.name){
+    if (name !== st.name){
+      ops.push({ op:'update', table:'people', where:{ year:y, name:st.name }, set:{ name } });
+      ops.push({ op:'update', table:'events', where:{ year:y, person:st.name }, set:{ person:name } });
+    }
+    ops.push({ op:'update', table:'people', where:{ year:y, name }, set:{ remark } });
+    ops.push({ op:'delete', table:'orders', where:{ year:y, person:st.name } });
+  } else {
+    const maxSort = S.data.people.reduce((m,p)=>Math.max(m,num(p.sort)),0);
+    ops.push({ op:'insert', table:'people', rows:[{ year:y, name, remark, sort:maxSort+1 }] });
+  }
+  const rows = Object.entries(v).map(([code, qty]) => ({ year:y, person:name, code, qty }));
+  if (rows.length) ops.push({ op:'insert', table:'orders', rows });
+  if (await commit(ops, '已儲存')) closeSheet();
+}
+function confirmSheet(title, msg, okLabel, fn){
+  openSheet(title, `<div>${msg}</div>`, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" id="okBtn">${esc(okLabel)}</button>`);
+  $('#okBtn').onclick = fn;
+}
+
+/* 賣出 / 送出 */
+function openEvent(type){
+  const C = compute();
+  const body = `
+    <div class="field"><div class="seg" id="evType"><button type="button" data-t="sale" class="${type==='sale'?'on':''}">賣出</button><button type="button" data-t="gift" class="${type==='gift'?'on':''}">額外送出</button></div></div>
+    <div class="field"><label id="whoLbl">${type==='sale'?'賣咗畀邊個':'送咗畀邊個'}</label><input class="inp" id="evWho" list="peopleList" placeholder="名或者簡稱，例如 TP"><datalist id="peopleList">${C.persons.map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></div>
+    <div class="field"><label>日期</label><input class="inp" type="date" id="evDate" value="${today()}"></div>
+    <div class="sub">件數</div>
+    ${C.products.map(pr => { const a = C.P[pr.code].avail; return `<div class="qrow" data-code="${esc(pr.code)}" data-avail="${a}"><div class="lbl"><div class="t">${esc(pr.name)}</div><div class="s" data-info>可再分 ${a}</div></div>${stepper(pr.code, 0)}</div>`; }).join('')}
+    <div class="field" style="margin-top:12px"><label>備註</label><input class="inp" id="evRemark" placeholder="例如：多咗，送畀樓下保安"></div>`;
+  openSheet(type==='sale' ? '記賣出' : '記額外送出', body, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" data-act="event-save">儲存</button>`);
+  sheetState = { kind:'event', type };
+}
+function updateEventNote(){
+  if (!sheetState || sheetState.kind !== 'event') return;
+  const v = readSteps($('#layer'));
+  $('#layer').querySelectorAll('.qrow[data-code]').forEach(r => {
+    const a = num(r.dataset.avail), q = v[r.dataset.code]||0, info = r.querySelector('[data-info]');
+    info.textContent = q > a ? `超出可再分（得 ${a}）` : `可再分 ${a}`; info.classList.toggle('bad', q > a);
+  });
+}
+async function saveEvent(){
+  const st = sheetState, v = readSteps($('#layer'));
+  const person = $('#evWho').value.trim(), date = $('#evDate').value, remark = $('#evRemark').value.trim();
+  if (!Object.keys(v).length) return toast('未揀任何數量', true);
+  const batch = uid(), now = new Date().toISOString();
+  const rows = Object.entries(v).map(([code, qty]) => ({ id:uid(), batch, year:S.year, type:st.type, person, code, qty, date, remark, createdAt:now }));
+  if (await commit([{ op:'insert', table:'events', rows }], st.type==='sale' ? '已記低賣出' : '已記低送出')) closeSheet();
+}
+
+/* 產品 */
+function openProduct(code){
+  const p = code ? S.data.products.find(x => x.code === code) : null;
+  const used = p && (S.data.orders.some(o=>o.code===code) || S.data.events.some(e=>e.code===code));
+  openSheet(p ? '修改產品' : '加產品', `
+    <div class="field"><label>編號</label><input class="inp" id="prCode" value="${esc(p?p.code:'')}" placeholder="例如 C08a" ${p?'disabled':''}></div>
+    <div class="field"><label>名稱</label><input class="inp" id="prName" value="${esc(p?p.name:'')}" placeholder="例如 大福字掛曆"></div>
+    <div class="field"><label>總數（手上總共幾多件）</label><input class="inp" id="prTotal" inputmode="numeric" value="${esc(p?p.total:'')}"></div>
+    ${p ? `<button class="btn danger sm" data-act="prod-del" ${used?'disabled':''}>刪除產品</button>${used?'<div class="mini" style="margin-top:6px">有人訂咗或者有記錄，唔可以刪除。</div>':''}` : ''}`,
+    `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" data-act="prod-save">儲存</button>`);
+  sheetState = { kind:'product', code };
+}
+async function saveProduct(){
+  const st = sheetState, y = S.year;
+  const code = st.code || $('#prCode').value.trim(), name = $('#prName').value.trim(), total = Math.max(0, Math.floor(num($('#prTotal').value)));
+  if (!code || !name) return toast('請填編號同名稱', true);
+  let ops;
+  if (st.code) ops = [{ op:'update', table:'products', where:{ year:y, code }, set:{ name, total } }];
+  else {
+    if (S.data.products.some(p => p.code === code)) return toast('已經有呢個編號', true);
+    const maxSort = S.data.products.reduce((m,p)=>Math.max(m,num(p.sort)),0);
+    ops = [{ op:'insert', table:'products', rows:[{ year:y, code, name, total, sort:maxSort+1 }] }];
+  }
+  if (await commit(ops, '已儲存產品')) closeSheet();
+}
+
+/* 修改記錄（日期、備註、件數、刪除） */
+function openRecord(batchId, focusRemark){
+  const b = batches().find(x => x.batch === batchId); if (!b) return toast('搵唔到呢條記錄，可能已經刪除咗', true);
+  const C = compute();
+  const body = `
+    <div class="field"><span class="tag ${b.type}" style="font-size:13px;font-weight:700;border-radius:8px;padding:3px 9px">${TYPE[b.type]}</span></div>
+    ${b.type==='pickup' ? `<div class="field"><label>客人</label><div style="font-weight:700;font-size:17px">${esc(b.person)}</div><input type="hidden" id="rWho" value="${esc(b.person)}"></div>`
+      : `<div class="field"><label>${b.type==='sale' ? '賣咗畀邊個' : '送咗畀邊個'}</label><input class="inp" id="rWho" value="${esc(b.person)}"></div>`}
+    <div class="field"><label>日期</label><input class="inp" type="date" id="rDate" value="${esc(b.date)}"></div>
+    <div class="field"><label>備註</label><textarea class="inp" id="rRemark" placeholder="例如：佢老公代攞；仲欠一本日記簿">${esc(b.remark)}</textarea></div>
+    <div class="sub">件數（改做 0 就會刪走嗰件）</div>
+    ${b.items.map(e => `<div class="qrow"><div class="lbl"><div class="t">${esc((C.P[e.code]||{}).name || e.code)}</div></div>${stepper(e.id, num(e.qty))}</div>`).join('')}
+    <div style="margin-top:16px"><button class="btn danger sm" data-act="ev-del" data-batch="${esc(b.batch)}">刪除成條記錄</button></div>`;
+  openSheet('修改記錄', body, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" id="recSave">儲存</button>`);
+  sheetState = { kind:'record', batch:b.batch };
+  if (focusRemark) setTimeout(() => { const r = $('#rRemark'); r && r.focus(); }, 50);
+  $('#recSave').onclick = async () => {
+    const v = readSteps($('#layer')), date = $('#rDate').value, remark = $('#rRemark').value.trim(), who = $('#rWho').value.trim();
+    const where = { year:S.year, batch:b.batch };
+    const ops = [{ op:'update', table:'events', where, set: b.type==='pickup' ? { date, remark } : { date, remark, person:who } }];
+    b.items.forEach(e => {
+      const q = v[e.id] || 0;
+      if (q === num(e.qty)) return;
+      ops.push(q ? { op:'update', table:'events', where:{ year:S.year, id:e.id }, set:{ qty:q } } : { op:'delete', table:'events', where:{ year:S.year, id:e.id } });
+    });
+    if (await commit(ops, '已更新記錄')) closeSheet();
+  };
+}
+
+/* 睇一款產品：邊個未攞、邊個攞咗 */
+function openProductView(code){
+  const C = compute(), p = C.P[code]; if (!p) return;
+  const pend = [], done = [];
+  C.persons.forEach(x => {
+    const o = x.ord[code]||0, k = x.pick[code]||0;
+    if (o > k) pend.push(`<div class="qrow"><div class="lbl"><div class="t">${esc(x.name)}</div><div class="s">訂 ${o}${k?` · 已攞 ${k}`:''}</div></div><span class="badge ${k?'part':'none'}">欠 ${o-k}</span></div>`);
+    else if (k) done.push(`<span class="it done">${esc(x.name)} <span class="q">×${k}</span></span>`);
+  });
+  const others = S.data.events.filter(e => e.code === code && e.type !== 'pickup');
+  const body = `
+    <div class="nums" style="margin-bottom:12px"><span>總數 <b>${p.total}</b></span><span>已訂 <b>${p.ordered}</b></span><span>已攞 <b>${p.picked}</b></span><span>未攞 <b>${p.pending}</b></span><span>送出 <b>${p.gift}</b></span><span>賣出 <b>${p.sale}</b></span><span>可再分 <b>${p.avail}</b></span></div>
+    <div class="sub">未攞（${pend.length} 位）</div>${pend.join('') || '<div class="mini">冇</div>'}
+    ${done.length ? `<div class="sub" style="margin-top:14px">已攞（${done.length} 位）</div><div class="items">${done.join('')}</div>` : ''}
+    ${others.length ? `<div class="sub" style="margin-top:14px">送出／賣出</div><div class="items">${others.map(e => `<span class="it">${TYPE[e.type]} · ${esc(e.person||'冇寫名')} <span class="q">×${num(e.qty)}</span></span>`).join('')}</div>` : ''}`;
+  openSheet(`${p.code} ${p.name}`, body, `<button class="btn grow" data-act="prod-edit" data-code="${esc(code)}">改名／總數</button><button class="btn primary grow" data-close="1">關閉</button>`);
+}
+
+/* 開新一年 */
+function openNewYear(){
+  const next = String(Math.max(...S.data.years.map(Number), Number(S.year)) + 1);
+  openSheet('開新一年', `
+    <div class="field"><label>新年份</label><input class="inp" id="nyYear" inputmode="numeric" value="${next}"></div>
+    <label class="qrow" style="cursor:pointer"><div class="lbl"><div class="t">抄埋每位客人嘅訂單數</div><div class="s">好似你以前喺 Excel 由上年抄落嚟咁</div></div><input type="checkbox" id="nyOrders" checked style="width:22px;height:22px"></label>
+    <div class="note">會由 ${esc(S.year)} 年複製產品（連總數）同客人名單。領取、賣出、送出記錄唔會抄。複製完記得改產品名同總數。</div>`,
+    `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" data-act="year-save">建立</button>`);
+}
+async function saveNewYear(){
+  const ny = $('#nyYear').value.trim(), withOrders = $('#nyOrders').checked;
+  if (!/^\d{4}$/.test(ny)) return toast('年份格式唔啱', true);
+  if (S.data.years.includes(ny)) return toast('呢年已經有資料', true);
+  const d = S.data;
+  const ops = [
+    { op:'insert', table:'products', rows: d.products.map(p => ({ ...p, year:ny })) },
+    { op:'insert', table:'people', rows: d.people.map(p => ({ ...p, year:ny })) }
+  ];
+  if (withOrders && d.orders.length) ops.push({ op:'insert', table:'orders', rows: d.orders.map(o => ({ ...o, year:ny })) });
+  const from = S.year;
+  if (await commit(ops)){
+    S.year = ny; store.set('gift-year', ny); closeSheet(); await refresh(); toast(`已由 ${from} 年複製到 ${ny} 年`);
+  }
+}
+
+/* 複製未攞名單 */
+function pendingText(){
+  const C = compute();
+  const lines = C.persons.filter(p => p.pend > 0).map(p => {
+    const items = p.codes.filter(c => (p.ord[c]||0) > (p.pick[c]||0)).map(c => `${(C.P[c]||{}).name || c} ${(p.ord[c]||0)-(p.pick[c]||0)}`);
+    return `${p.name}：${items.join('、')}`;
+  });
+  const d = new Date();
+  return `${S.year} 年贈品未攞名單（${d.getMonth()+1}月${d.getDate()}日）\n共 ${lines.length} 位\n\n` + lines.join('\n');
+}
+async function copyText(text){
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch(e){
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch(_){}
+    ta.remove(); return ok;
+  }
+}
+
+/* ============ 事件 ============ */
+let toastT;
+function toast(msg, err, actions){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t = document.createElement('div'); t.className = 'toast' + (err?' err':'');
+  const span = document.createElement('span'); span.textContent = msg; t.appendChild(span);
+  if (typeof actions === 'function') actions = [['復原', actions]];
+  (actions || []).forEach(([label, fn]) => {
+    const b = document.createElement('button'); b.textContent = label;
+    b.onclick = () => { t.remove(); fn(); }; t.appendChild(b);
+  });
+  document.body.appendChild(t); clearTimeout(toastT); toastT = setTimeout(()=>t.remove(), actions && actions.length ? 7000 : err ? 4200 : 2200);
+}
+function busy(on, label){
+  let b = $('#busyEl');
+  if (on && !b){ b = document.createElement('div'); b.id='busyEl'; b.className='busy'; b.innerHTML='<div></div>'; document.body.appendChild(b); }
+  if (on) b.firstChild.textContent = label || '儲存緊…';
+  if (!on && b) b.remove();
+}
+
+document.addEventListener('click', async ev => {
+  const t = ev.target.closest('[data-tab],[data-filter],[data-evfilter],[data-act],[data-close],[data-d],#evType button');
+  if (!t) return;
+  if (t.dataset.close){ if (t === ev.target || t.classList.contains('x') || t.classList.contains('btn')) closeSheet(); return; }
+  if (t.dataset.tab){ S.tab = t.dataset.tab; store.set('gift-tab', S.tab); render(); scrollTo(0,0); return; }
+  if (t.dataset.filter){ S.filter = t.dataset.filter; render(); return; }
+  if (t.dataset.evfilter){ S.evFilter = t.dataset.evfilter; render(); return; }
+  if (t.dataset.d){
+    const inp = t.parentElement.querySelector('input'); inp.value = Math.max(0, Math.floor(num(inp.value)) + Number(t.dataset.d));
+    t.parentElement.classList.toggle('has', num(inp.value) > 0); updatePickupNote(); updateEventNote(); return;
+  }
+  if (t.closest('#evType')){
+    sheetState.type = t.dataset.t;
+    t.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b===t));
+    $('#layer h3').textContent = t.dataset.t==='sale' ? '記賣出' : '記額外送出';
+    $('#whoLbl').textContent = t.dataset.t==='sale' ? '賣咗畀邊個' : '送咗畀邊個'; return;
+  }
+  const a = t.dataset.act;
+  if (a==='refresh') refresh();
+  else if (a==='excel') pickExcel();
+  else if (a==='prod-view') openProductView(t.dataset.code);
+  else if (a==='rec-edit') openRecord(t.dataset.batch);
+  else if (a==='toggle'){ const n = t.dataset.name; S.open.has(n) ? S.open.delete(n) : S.open.add(n); render(); }
+  else if (a==='pick-all') pickAll(t.dataset.name);
+  else if (a==='copy-list'){ const ok = await copyText(pendingText()); toast(ok ? '已複製，可以貼落 WhatsApp' : '複製唔到，請再試', !ok); }
+  else if (a==='pickup') openPickup(t.dataset.name);
+  else if (a==='pickup-save') savePickup();
+  else if (a==='show-others'){ $('#others').classList.remove('hidden'); t.remove(); }
+  else if (a==='person-new') openPerson(null);
+  else if (a==='person-edit') openPerson(t.dataset.name);
+  else if (a==='person-save') savePerson();
+  else if (a==='person-del'){
+    const n = sheetState.name;
+    confirmSheet('刪除客人', `確定刪除「${esc(n)}」同佢嘅訂單？`, '刪除', async () => {
+      if (await commit([{ op:'delete', table:'people', where:{ year:S.year, name:n } }, { op:'delete', table:'orders', where:{ year:S.year, person:n } }], '已刪除')) closeSheet();
+    });
+  }
+  else if (a==='event') openEvent(t.dataset.type);
+  else if (a==='event-save') saveEvent();
+  else if (a==='ev-del'){
+    const b = batches().find(x => x.batch === t.dataset.batch); if (!b) return;
+    const C = compute();
+    confirmSheet('刪除記錄', `確定刪除呢條${TYPE[b.type]}記錄？<div class="note">${esc(b.person||'')}：${esc(b.items.map(e=>`${(C.P[e.code]||{}).name||e.code} ×${e.qty}`).join('、'))}</div>`, '刪除', async () => {
+      if (await commit([{ op:'delete', table:'events', where:{ year:S.year, batch:b.batch } }], '已刪除記錄')) closeSheet();
+    });
+  }
+  else if (a==='prod-new') openProduct(null);
+  else if (a==='prod-edit') openProduct(t.dataset.code);
+  else if (a==='prod-save') saveProduct();
+  else if (a==='prod-del'){
+    const c = sheetState.code;
+    confirmSheet('刪除產品', `確定刪除「${esc(c)}」？`, '刪除', async () => { if (await commit([{ op:'delete', table:'products', where:{ year:S.year, code:c } }], '已刪除產品')) closeSheet(); });
+  }
+  else if (a==='year-new') openNewYear();
+  else if (a==='year-save') saveNewYear();
+  else if (a==='conn-save'){
+    const url = $('#cUrl').value.trim(), passcode = $('#cPass').value;
+    if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)) return toast('網址應該係 https://script.google.com/… 開頭', true);
+    const api = remoteApi(url, passcode); busy(true, '連接緊…');
+    try { await api.load(S.year); store.set('gift-conn', { url, passcode }); S.api = api; S.loaded = false; toast('連接成功'); await refresh(); }
+    catch(e){ toast(e.message, true); }
+    finally { busy(false); }
+  }
+  else if (a==='conn-clear'){ store.del('gift-conn'); connect(); S.loaded = false; refresh(); }
+  else if (a==='demo-reset'){ confirmSheet('清除示範資料', '會清除呢部機嘅示範資料，重新由 Excel 2026 數據開始。', '清除', () => { S.api.reset(); connect(); closeSheet(); refresh(); }); }
+});
+document.addEventListener('input', ev => {
+  if (ev.target.id === 'q'){ S.q = ev.target.value; const pos = ev.target.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos,pos); }
+  else if (ev.target.id === 'evq'){ S.evQ = ev.target.value; const pos = ev.target.selectionStart; render(); const q = $('#evq'); q.focus(); q.setSelectionRange(pos,pos); }
+  else if (ev.target.closest('[data-step]')){ ev.target.closest('[data-step]').classList.toggle('has', num(ev.target.value) > 0); updatePickupNote(); updateEventNote(); }
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && $('#layer').innerHTML) closeSheet(); });
+$('#yearSel').addEventListener('change', ev => { S.year = ev.target.value; store.set('gift-year', S.year); S.open.clear(); refresh(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('#layer').innerHTML && !$('#busyEl') && !S.api.demo) refresh(); });
+
+connect(); render(); refresh();
+</script>
+</body>
+</html>

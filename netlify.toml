@@ -1,31 +1,10 @@
+# 純靜態網站，唔使 build
 [build]
-  base    = "."
-  command = "pnpm --filter @workspace/api-server run build && ([ -n \"$DATABASE_URL\" ] && pnpm --filter @workspace/db run push --force || true) && pnpm --filter @workspace/mpf-compare run build"
-  publish = "artifacts/mpf-compare/dist/public"
+  publish = "site"
+  command = ""
 
-[build.environment]
-  NODE_VERSION = "20"
-  PNPM_VERSION = "10"
-  BASE_PATH    = "/"
-  NODE_ENV     = "production"
-
-[functions]
-  directory    = "netlify/functions"
-  node_bundler = "nft"
-
-[[redirects]]
-  from  = "/api/mpf/sync"
-  to    = "/.netlify/functions/sync-background"
-  status = 200
-  force  = true
-
-[[redirects]]
-  from  = "/api/*"
-  to    = "/.netlify/functions/api"
-  status = 200
-  force  = true
-
-[[redirects]]
-  from   = "/*"
-  to     = "/index.html"
-  status = 200
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
