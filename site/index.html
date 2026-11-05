@@ -223,6 +223,8 @@ button.stat:active{transform:scale(.98)}
 .sheet .sb .rows{box-shadow:none}
 .x.back{font-size:22px;margin-right:-2px}
 .btn.sm{font-size:14px}
+.qrbox{width:min(260px,70vw);margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px}
+.qrbox svg{display:block;width:100%;height:auto}
 </style>
 </head>
 <body>
@@ -352,6 +354,44 @@ function demoOps(){
 }
 
 /* ============ 由 Excel 匯入 ============ */
+/* ============ 連接其他機（QR code） ============ */
+const b64e = str => btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64d = str => decodeURIComponent(escape(atob(str.replace(/-/g,'+').replace(/_/g,'/'))));
+function connectLink(){
+  const cfg = store.get('gift-conn') || {};
+  return location.origin + location.pathname + '#connect=' + b64e(JSON.stringify({ u:cfg.url, p:cfg.passcode }));
+}
+function loadScript(src){
+  return new Promise((ok, bad) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = () => bad(new Error('載入唔到，請檢查網絡')); document.head.appendChild(sc); });
+}
+async function openShareConn(){
+  try { if (!window.qrcode) await loadScript('vendor/qrcode.js'); } catch(e){ return toast(e.message, true); }
+  const link = connectLink();
+  const qr = qrcode(0, 'M'); qr.addData(link); qr.make();
+  openSheet('連接其他機', `
+    <div style="text-align:center">
+      <div class="qrbox">${qr.createSvgTag({ cellSize:5, margin:3, scalable:true })}</div>
+      <div style="font-weight:600;margin-top:12px">用手機相機掃呢個 QR code</div>
+      <div class="mini" style="margin-top:4px">會喺手機瀏覽器打開網站，撳「連接」就搞掂。</div>
+    </div>
+    <div class="note" style="margin-top:14px">⚠️ 呢個 QR code 同連結入面有你嘅密碼。唔好影相放上網，只可以畀信得過嘅人（例如屋企人）用。</div>`,
+    `<button class="btn grow" data-act="copy-conn">複製連結（用 WhatsApp 傳）</button><button class="btn primary" data-close="1">關閉</button>`);
+}
+async function checkConnectHash(){
+  const m = location.hash.match(/^#connect=([A-Za-z0-9_-]+)/); if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  let cfg; try { cfg = JSON.parse(b64d(m[1])); } catch(e){ return toast('連接連結唔完整，請再掃一次', true); }
+  if (!cfg.u || !/^https:\/\/script\.google(usercontent)?\.com\//.test(cfg.u)) return toast('連接連結唔啱', true);
+  const cur = store.get('gift-conn');
+  if (cur && cur.url === cfg.u && cur.passcode === cfg.p) return toast('呢部機已經連接好');
+  confirmSheet('連接呢部機', '將呢部機連接到你嘅 Google Sheet？連接之後，喺呢部機見到同記低嘅資料，都會同其他機同步。', '連接', async () => {
+    const api = remoteApi(cfg.u, cfg.p); busy(true, '連接緊…');
+    try { await api.load(S.year); store.set('gift-conn', { url:cfg.u, passcode:cfg.p }); S.api = api; S.loaded = false; closeSheet(); toast('連接成功 ✓'); await refresh(); }
+    catch(e){ toast('連接唔到：' + e.message, true); }
+    finally { busy(false); }
+  });
+}
+
 function loadXLSX(){
   if (window.XLSX) return Promise.resolve();
   return new Promise((ok, bad) => {
@@ -719,6 +759,11 @@ function viewSettings(C){
     </div>
     <div class="mini" style="margin-top:10px">${S.api.demo ? '而家係示範模式。' : '✓ 已連接 Google Sheet。Google Sheet 入面嘅「總表」會自動更新。'}網址同密碼只會記喺呢部機，每部機第一次用都要輸入一次。</div>
   </div>
+  ${S.api.demo ? '' : `<h2>連接其他機</h2>
+  <div class="card" style="padding:14px">
+    <div class="mini" style="margin-bottom:10px">喺呢度出一個 QR code，用手機相機一掃就自動連接好，唔使再貼網址同打密碼。</div>
+    <button class="btn primary" data-act="share-conn">顯示 QR code</button>
+  </div>`}
   <h2>${esc(S.year)} 年產品</h2>
   <div class="card">`;
   if (!C.products.length) h += `<div class="setrow mini">仲未有產品</div>`;
@@ -1129,6 +1174,8 @@ document.addEventListener('click', async ev => {
     if (t.closest('#layer') && S.cur) S.stack.push(S.cur); else S.stack = [];
     S.cur = OPEN[a]; S.cur(); return;
   }
+  if (a === 'share-conn'){ openShareConn(); return; }
+  if (a === 'copy-conn'){ const ok = await copyText(connectLink()); toast(ok ? '已複製連結，傳去手機再撳開就得' : '複製唔到', !ok); return; }
   if (a === 'note-save'){
     const remark = $('#pvNote').value.trim();
     if (await commit([{ op:'update', table:'people', where:{ year:S.year, name:D.name }, set:{ remark } }], '已儲存備註') && S.cur) S.cur();
@@ -1191,7 +1238,8 @@ document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && $('#laye
 $('#yearSel').addEventListener('change', ev => { S.year = ev.target.value; store.set('gift-year', S.year); S.open.clear(); refresh(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('#layer').innerHTML && !$('#busyEl') && !S.api.demo) refresh(); });
 
-connect(); render(); refresh();
+connect(); render(); refresh().then(checkConnectHash);
+window.addEventListener('hashchange', checkConnectHash);
 </script>
 </body>
 </html>
