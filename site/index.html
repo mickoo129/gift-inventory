@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#8f1d1d">
 <title>贈品記數</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="贈品記數">
 <style>
 :root{
   --bg:#f6f1e9; --card:#fffdf9; --ink:#2a2320; --muted:#7a6f66; --line:#e6ddd0;
@@ -176,6 +181,45 @@ textarea.inp{min-height:64px;resize:vertical}
 .busy{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:rgba(246,241,233,.55)}
 .busy div{background:var(--card);padding:12px 18px;border-radius:12px;box-shadow:var(--shadow);font-weight:600}
 .hidden{display:none!important}
+
+/* v4 清單樣式 */
+button.stat{border:1px solid var(--line);cursor:pointer;font:inherit;color:inherit;width:100%}
+button.stat:active{transform:scale(.98)}
+.stat .l{white-space:nowrap}
+.h2n{font-weight:400;font-size:12.5px;color:var(--muted);margin-left:6px}
+.rows{overflow:hidden}
+.row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:none;padding:11px 14px;font:inherit;color:inherit;cursor:pointer}
+.row.static{cursor:default}
+.rows > .row + .row, .rows > .prow2 + .prow2, .rows > .prow2 + .row{border-top:1px solid var(--line)}
+.row:hover{background:#fbf7f0}
+.rmain{flex:1;min-width:0}
+.rname{font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rname .code{font-size:11px;padding:0 5px;background:none;color:var(--muted);border:1px solid var(--line)}
+.rname .tag{font-size:11.5px;font-weight:700;border-radius:7px;padding:1px 7px}
+.rsub{font-size:13px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.rnote{font-size:13px;color:#86601c;margin-top:3px}
+.rav{text-align:right;min-width:52px}
+.rav b{display:block;font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums}
+.rav small{font-size:11px;color:var(--muted)}
+.rav.zero b{color:#b9aea3}.rav.neg b{color:var(--red)}
+.bar.thin{height:5px;margin:6px 0 4px}
+.owe-t{color:var(--red);font-weight:700}
+.ok-t{color:var(--green);font-weight:600}
+.chev{color:#c4b8aa;font-size:20px;line-height:1}
+.prow2{display:flex;align-items:stretch}
+.prow2 .row{flex:1}
+.quick{border:0;border-left:1px solid var(--line);background:none;color:var(--green);font-weight:700;font-size:14px;padding:0 14px;white-space:nowrap;cursor:pointer}
+@media(hover:hover){.quick:hover{background:var(--green-soft)}}
+.owe-t small{font-weight:600;font-size:12px}
+.rname .badge{font-size:11.5px;padding:1px 7px}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px}
+.kv div{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:8px;text-align:center}
+.kv b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+.kv span{font-size:12px;color:var(--muted)}
+.sheet .sb h2{margin:16px 2px 8px}
+.sheet .sb .rows{box-shadow:none}
+.x.back{font-size:22px;margin-right:-2px}
+.btn.sm{font-size:14px}
 </style>
 </head>
 <body>
@@ -431,7 +475,7 @@ const S = {
   data:{ years:[], products:[], people:[], orders:[], events:[] },
   loaded:false, syncedAt:null,
   tab: store.get('gift-tab') || 'overview',
-  filter:'all', q:'', evFilter:'all', evQ:'', status:'ok', open:new Set()
+  filter:'all', q:'', evFilter:'all', evQ:'', status:'ok', open:new Set(), stack:[], cur:null
 };
 
 function connect(){
@@ -566,71 +610,49 @@ function viewOverview(C){
   const availQty = ps.reduce((s,p)=>s+Math.max(0,p.avail),0);
   const neg = ps.filter(p => p.avail < 0).length;
   let h = `<div class="stats">
-    <div class="card stat"><div class="n">${pendPeople}</div><div class="l">位客未攞晒</div></div>
-    <div class="card stat"><div class="n">${pendQty}</div><div class="l">件未攞</div></div>
-    <div class="card stat ${neg?'warn':''}"><div class="n">${availQty}</div><div class="l">${neg?`件可再分 · ${neg} 款超額`:'件仲可以再分'}</div></div>
+    <button class="card stat" data-act="stat" data-k="people"><div class="n">${pendPeople}</div><div class="l">位客未攞晒 ›</div></button>
+    <button class="card stat" data-act="stat" data-k="pending"><div class="n">${pendQty}</div><div class="l">件未攞 ›</div></button>
+    <button class="card stat ${neg?'warn':''}" data-act="stat" data-k="avail"><div class="n">${availQty}</div><div class="l">${neg?`可再分 · ${neg} 款超額 ›`:'件可以再分 ›'}</div></button>
   </div>
   <div class="actions">
-    <button class="btn gold grow" data-act="event" data-type="sale">＋ 記賣出</button>
-    <button class="btn grow" data-act="event" data-type="gift">＋ 記額外送出</button>
+    <button class="btn sm grow" data-act="event" data-type="sale">＋ 記賣出</button>
+    <button class="btn sm grow" data-act="event" data-type="gift">＋ 記額外送出</button>
   </div>
-  <h2>產品存貨</h2>
-  <div class="legend"><span style="--c:var(--green)">已攞</span><span style="--c:#e0b25a">已訂未攞</span><span style="--c:#b5a594">送出／賣出</span></div>
-  <div class="plist">`;
+  <h2>產品 <span class="h2n">撳入去睇邊個未攞</span></h2>
+  <div class="card rows">`;
   C.products.forEach(pr => {
     const p = C.P[pr.code], T = Math.max(p.total, p.committed + p.gift + p.sale, 1);
-    const w = x => (100 * x / T).toFixed(2) + '%';
-    const pickedOk = p.committed - p.pending;
-    h += `<div class="card prod" data-act="prod-view" data-code="${esc(p.code)}" role="button" tabindex="0">
-      <div class="top"><span class="code">${esc(p.code)}</span><span class="pname">${esc(p.name)}</span>
-        <span class="avail ${p.avail<0?'neg':p.avail===0?'zero':''}"><span class="n">${p.avail}</span><span class="l">${p.avail<0?'超咗':'可再分'}</span></span></div>
-      <div class="bar"><i class="b-pick" style="width:${w(pickedOk)}"></i><i class="b-pend" style="width:${w(p.pending)}"></i><i class="b-out" style="width:${w(p.gift+p.sale)}"></i></div>
-      <div class="nums"><span>總數 <b>${p.total}</b></span><span>已訂 <b>${p.ordered}</b></span><span>已攞 <b>${p.picked}</b></span><span>未攞 <b>${p.pending}</b></span>${p.gift?`<span>送出 <b>${p.gift}</b></span>`:''}${p.sale?`<span>賣出 <b>${p.sale}</b></span>`:''}<span>手上 <b>${p.onHand}</b></span></div>
-    </div>`;
+    const w = x => (100 * Math.max(0, x) / T).toFixed(2) + '%';
+    h += `<button class="row" data-act="prod-view" data-code="${esc(p.code)}">
+      <div class="rmain"><div class="rname">${esc(p.name)} <span class="code">${esc(p.code)}</span></div>
+        <div class="bar thin"><i class="b-pick" style="width:${w(p.committed - p.pending)}"></i><i class="b-pend" style="width:${w(p.pending)}"></i><i class="b-out" style="width:${w(p.gift+p.sale)}"></i></div>
+        <div class="rsub">${p.pending ? `<b class="owe-t">未攞 ${p.pending}</b>` : '<span class="ok-t">冇人欠</span>'} · 手上 ${p.onHand} / 總數 ${p.total}</div></div>
+      <div class="rav ${p.avail<0?'neg':p.avail===0?'zero':''}"><b>${p.avail}</b><small>${p.avail<0?'超咗':'可再分'}</small></div>
+    </button>`;
   });
   return h + `</div>`;
 }
 
-function personCard(p, C){
-  const B = { done:'攞晒', part:'攞咗部分', none:'未攞', empty:'冇訂' };
-  const nm = c => esc((C.P[c]||{}).name || c);
-  const owe = p.codes.filter(c => (p.ord[c]||0) > (p.pick[c]||0));
-  const got = p.codes.filter(c => (p.pick[c]||0) > 0);
-  const isOpen = S.open.has(p.name);
-  let h = `<div class="card person">
-    <div class="top"><span class="nm">${esc(p.name)}</span><span class="badge ${p.st}">${B[p.st]}${p.st==='part'?` · 欠 ${p.pend}`:''}</span></div>
-    ${p.remark ? `<div class="remark">${esc(p.remark)}</div>` : ''}`;
-  if (owe.length){
-    h += `<div class="items">${owe.map(c => {
-      const o = p.ord[c]||0, k = p.pick[c]||0;
-      return k ? `<span class="it owe">${nm(c)} <span class="q">欠 ${o-k}</span><small>/ ${o}</small></span>` : `<span class="it">${nm(c)} <span class="q">×${o}</span></span>`;
-    }).join('')}</div>`;
-  } else if (p.st === 'done'){
-    h += `<div class="doneLine">✓ 全部攞晒${p.last ? ` · ${fmtDate(p.last)}` : ''}</div>`;
-  } else h += '<div style="height:8px"></div>';
-  const recs = batches().filter(b => b.person === p.name);
-  if (recs.length){
-    const nP = recs.filter(b => b.type==='pickup').length;
-    const label = got.length ? `已攞 ${p.totK} 件（${nP} 次）${p.last && p.st!=='done' ? ` · 最後 ${fmtDate(p.last)}` : ''}` : `${recs.length} 條記錄`;
-    h += `<button class="toggle" data-act="toggle" data-name="${esc(p.name)}">${isOpen?'▾':'▸'} ${label}${isOpen?'':' · 撳開可以改備註'}</button>`;
-    if (isOpen) h += `<div class="recs">${recs.map(b => `<button class="rec" data-act="rec-edit" data-batch="${esc(b.batch)}">
-      <span class="rd"><span class="tag ${b.type}">${TYPE[b.type]}</span>${b.date ? fmtDate(b.date) : '冇日期'}</span>
-      <span class="ri">${b.items.map(e => `${nm(e.code)} ×${num(e.qty)}`).join('、')}${b.remark ? `<span class="rr">備註：${esc(b.remark)}</span>` : `<span class="rr add">＋ 加備註</span>`}</span>
-      <span class="pen">✎</span></button>`).join('')}</div>`;
-  }
-  if (p.extras){
-    const parts = [];
-    for (const [t, lbl] of [['gift','另外送咗'],['sale','買咗']]){
-      const list = Object.entries(p.extras[t]).map(([c,q]) => `${nm(c)} ×${q}`);
-      if (list.length) parts.push(`${lbl}：${list.join('、')}`);
-    }
-    if (parts.length) h += `<div class="extra" style="margin-top:8px">${parts.join('<br>')}</div>`;
-  }
-  h += `<div class="prow" style="margin-top:10px">`;
-  if (p.pend > 0) h += `<button class="btn primary sm grow" data-act="pick-all" data-name="${esc(p.name)}">全部攞晒</button><button class="btn sm" data-act="pickup" data-name="${esc(p.name)}">部分／改數</button>`;
-  else h += `<button class="btn sm grow" data-act="pickup" data-name="${esc(p.name)}">加單即攞</button>`;
-  h += `<button class="btn sm" data-act="person-edit" data-name="${esc(p.name)}">改訂單</button></div></div>`;
-  return h;
+const STATUS = { done:'攞晒', part:'攞咗部分', none:'未攞', empty:'冇訂' };
+function oweSummary(p, C, max){
+  const items = p.codes.filter(c => (p.ord[c]||0) > (p.pick[c]||0)).map(c => `${(C.P[c]||{}).name || c} ${(p.ord[c]||0)-(p.pick[c]||0)}`);
+  if (max && items.length > max) return items.slice(0, max).join('、') + ` 等 ${items.length} 款`;
+  return items.join('、');
+}
+function personRow(p, C){
+  let sub;
+  if (p.pend > 0) sub = `<span class="owe-t">欠 ${p.pend} 件</span>：${esc(oweSummary(p, C, 3))}`;
+  else if (p.st === 'done') sub = `<span class="ok-t">✓ 全部攞晒</span>${p.last ? ` · ${fmtDate(p.last)}` : ''}`;
+  else sub = '冇訂嘢';
+  return `<div class="prow2">
+    <button class="row" data-act="person-view" data-name="${esc(p.name)}">
+      <div class="rmain"><div class="rname">${esc(p.name)}</div>
+        <div class="rsub">${sub}</div>
+        ${p.remark ? `<div class="rnote">📝 ${esc(p.remark)}</div>` : ''}</div>
+      ${p.pend > 0 ? '' : '<span class="chev">›</span>'}
+    </button>
+    ${p.pend > 0 ? `<button class="quick" data-act="pick-all" data-name="${esc(p.name)}" title="全部攞晒">✓ 攞晒</button>` : ''}
+  </div>`;
 }
 
 function viewPeople(C){
@@ -639,14 +661,16 @@ function viewPeople(C){
   const cnt = { all:found.length, none:0, part:0, done:0, empty:0 };
   found.forEach(p => cnt[p.st]++);
   const F = [['all','全部'],['none','未攞'],['part','攞咗部分'],['done','攞晒'],['empty','冇訂']];
-  const list = found.filter(p => S.filter==='all' || p.st===S.filter);
-  let h = `<div class="toolbar"><input class="search" id="q" placeholder="搵客人…" value="${esc(S.q)}"><button class="btn primary" data-act="person-new">＋ 新客人</button></div>
-  <div class="chips">${F.map(([k,l]) => `<button class="chip ${S.filter===k?'on':''}" data-filter="${k}">${l}<span class="c">${cnt[k]}</span></button>`).join('')}</div>
-  ${C.persons.some(p=>p.pend>0) ? `<div class="toolrow"><button class="btn sm ghost" data-act="copy-list">📋 複製未攞名單</button></div>` : ''}
-  <div class="list">`;
-  if (!list.length) h += `<div class="card empty-state">冇符合嘅客人</div>`;
-  list.forEach(p => h += personCard(p, C));
-  return h + `</div>`;
+  let h = `<div class="toolbar"><input class="search" id="q" placeholder="搵客人或備註…" value="${esc(S.q)}"><button class="btn primary" data-act="person-new">＋ 新客人</button></div>
+  <div class="chips">${F.filter(([k]) => k==='all' || cnt[k]).map(([k,l]) => `<button class="chip ${S.filter===k?'on':''}" data-filter="${k}">${l}<span class="c">${cnt[k]}</span></button>`).join('')}</div>`;
+  const groups = S.filter === 'all' ? ['part','none','done','empty'] : [S.filter];
+  let any = false;
+  groups.forEach(g => {
+    const list = found.filter(p => p.st === g); if (!list.length) return; any = true;
+    h += `<h2>${STATUS[g]}（${list.length}）</h2><div class="card rows">${list.map(p => personRow(p, C)).join('')}</div>`;
+  });
+  if (!any) h += `<div class="card empty-state">冇符合嘅客人</div>`;
+  return h;
 }
 
 function batches(){
@@ -717,11 +741,17 @@ function viewSettings(C){
 /* ============ 彈出表單 ============ */
 let sheetState = null;
 function openSheet(title, body, foot){
+  const back = S.stack && S.stack.length ? `<button class="x back" data-act="back" aria-label="返回">‹</button>` : '';
   $('#layer').innerHTML = `<div class="scrim" data-close="1"><div class="sheet" role="dialog" aria-label="${esc(title)}">
-    <div class="sh"><h3>${esc(title)}</h3><button class="x" data-close="1" aria-label="關閉">×</button></div>
+    <div class="sh">${back}<h3>${esc(title)}</h3><button class="x" data-close="1" aria-label="關閉">×</button></div>
     <div class="sb">${body}</div><div class="sf">${foot}</div></div></div>`;
 }
-function closeSheet(){ $('#layer').innerHTML = ''; sheetState = null; }
+function closeSheet(){ $('#layer').innerHTML = ''; sheetState = null; S.stack = []; S.cur = null; }
+/* 儲存完：如果係由詳情頁入嚟，就返去詳情頁 */
+function doneSheet(){
+  if (S.stack.length){ S.cur = S.stack.pop(); sheetState = null; S.cur(); }
+  else closeSheet();
+}
 
 function stepper(key, val){
   return `<div class="step ${val>0?'has':''}" data-step="${esc(key)}"><button type="button" data-d="-1" aria-label="減">−</button><input inputmode="numeric" value="${val}" aria-label="數量"><button type="button" data-d="1" aria-label="加">＋</button></div>`;
@@ -750,10 +780,11 @@ async function pickAll(name){
   const batch = uid(), now = new Date().toISOString(), date = today();
   const rows = p.codes.filter(c => (p.ord[c]||0) > (p.pick[c]||0)).map(c => ({ id:uid(), batch, year:S.year, type:'pickup', person:name, code:c, qty:(p.ord[c]||0)-(p.pick[c]||0), date, remark:'', createdAt:now }));
   const total = rows.reduce((s,r)=>s+r.qty,0);
-  await commit([{ op:'insert', table:'events', rows }], `已記低 ${name} 攞晒 ${total} 件`, [
+  const ok = await commit([{ op:'insert', table:'events', rows }], `已記低 ${name} 攞晒 ${total} 件`, [
     ['加備註', () => openRecord(batch, true)],
     ['復原', () => commit([{ op:'delete', table:'events', where:{ year:S.year, batch } }], '已復原')]
   ]);
+  if (ok && S.cur && $('#layer').innerHTML) S.cur();
 }
 
 /* 記領取（部分／改數／加單） */
@@ -811,7 +842,7 @@ async function savePickup(){
     }
   });
   const total = evRows.reduce((s,r)=>s+r.qty,0);
-  if (await commit(ops, `已記低 ${st.name} 領取 ${total} 件`)) closeSheet();
+  if (await commit(ops, `已記低 ${st.name} 領取 ${total} 件`)) doneSheet();
 }
 
 /* 新客人 / 改訂單 */
@@ -849,7 +880,7 @@ async function savePerson(){
   }
   const rows = Object.entries(v).map(([code, qty]) => ({ year:y, person:name, code, qty }));
   if (rows.length) ops.push({ op:'insert', table:'orders', rows });
-  if (await commit(ops, '已儲存')) closeSheet();
+  if (await commit(ops, '已儲存')) doneSheet();
 }
 function confirmSheet(title, msg, okLabel, fn){
   openSheet(title, `<div>${msg}</div>`, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" id="okBtn">${esc(okLabel)}</button>`);
@@ -883,7 +914,7 @@ async function saveEvent(){
   if (!Object.keys(v).length) return toast('未揀任何數量', true);
   const batch = uid(), now = new Date().toISOString();
   const rows = Object.entries(v).map(([code, qty]) => ({ id:uid(), batch, year:S.year, type:st.type, person, code, qty, date, remark, createdAt:now }));
-  if (await commit([{ op:'insert', table:'events', rows }], st.type==='sale' ? '已記低賣出' : '已記低送出')) closeSheet();
+  if (await commit([{ op:'insert', table:'events', rows }], st.type==='sale' ? '已記低賣出' : '已記低送出')) doneSheet();
 }
 
 /* 產品 */
@@ -909,7 +940,7 @@ async function saveProduct(){
     const maxSort = S.data.products.reduce((m,p)=>Math.max(m,num(p.sort)),0);
     ops = [{ op:'insert', table:'products', rows:[{ year:y, code, name, total, sort:maxSort+1 }] }];
   }
-  if (await commit(ops, '已儲存產品')) closeSheet();
+  if (await commit(ops, '已儲存產品')) doneSheet();
 }
 
 /* 修改記錄（日期、備註、件數、刪除） */
@@ -937,7 +968,7 @@ function openRecord(batchId, focusRemark){
       if (q === num(e.qty)) return;
       ops.push(q ? { op:'update', table:'events', where:{ year:S.year, id:e.id }, set:{ qty:q } } : { op:'delete', table:'events', where:{ year:S.year, id:e.id } });
     });
-    if (await commit(ops, '已更新記錄')) closeSheet();
+    if (await commit(ops, '已更新記錄')) doneSheet();
   };
 }
 
@@ -947,16 +978,59 @@ function openProductView(code){
   const pend = [], done = [];
   C.persons.forEach(x => {
     const o = x.ord[code]||0, k = x.pick[code]||0;
-    if (o > k) pend.push(`<div class="qrow"><div class="lbl"><div class="t">${esc(x.name)}</div><div class="s">訂 ${o}${k?` · 已攞 ${k}`:''}</div></div><span class="badge ${k?'part':'none'}">欠 ${o-k}</span></div>`);
-    else if (k) done.push(`<span class="it done">${esc(x.name)} <span class="q">×${k}</span></span>`);
+    if (o > k) pend.push(`<button class="row" data-act="person-view" data-name="${esc(x.name)}"><div class="rmain"><div class="rname">${esc(x.name)}</div><div class="rsub">訂 ${o}${k?` · 已攞 ${k}`:''}${x.remark ? ` · 📝 ${esc(x.remark)}` : ''}</div></div><span class="badge ${k?'part':'none'}">欠 ${o-k}</span><span class="chev">›</span></button>`);
+    else if (k) done.push(`<button class="row" data-act="person-view" data-name="${esc(x.name)}"><div class="rmain"><div class="rname">${esc(x.name)}</div></div><span class="ok-t">×${k}</span><span class="chev">›</span></button>`);
   });
   const others = S.data.events.filter(e => e.code === code && e.type !== 'pickup');
   const body = `
-    <div class="nums" style="margin-bottom:12px"><span>總數 <b>${p.total}</b></span><span>已訂 <b>${p.ordered}</b></span><span>已攞 <b>${p.picked}</b></span><span>未攞 <b>${p.pending}</b></span><span>送出 <b>${p.gift}</b></span><span>賣出 <b>${p.sale}</b></span><span>可再分 <b>${p.avail}</b></span></div>
-    <div class="sub">未攞（${pend.length} 位）</div>${pend.join('') || '<div class="mini">冇</div>'}
-    ${done.length ? `<div class="sub" style="margin-top:14px">已攞（${done.length} 位）</div><div class="items">${done.join('')}</div>` : ''}
-    ${others.length ? `<div class="sub" style="margin-top:14px">送出／賣出</div><div class="items">${others.map(e => `<span class="it">${TYPE[e.type]} · ${esc(e.person||'冇寫名')} <span class="q">×${num(e.qty)}</span></span>`).join('')}</div>` : ''}`;
-  openSheet(`${p.code} ${p.name}`, body, `<button class="btn grow" data-act="prod-edit" data-code="${esc(code)}">改名／總數</button><button class="btn primary grow" data-close="1">關閉</button>`);
+    <div class="kv">
+      <div><b>${p.total}</b><span>總數</span></div><div><b>${p.ordered}</b><span>已訂</span></div><div><b>${p.picked}</b><span>已攞</span></div>
+      <div><b class="${p.pending?'owe-t':''}">${p.pending}</b><span>未攞</span></div><div><b>${p.gift + p.sale}</b><span>送出／賣出</span></div><div><b class="${p.avail<0?'owe-t':''}">${p.avail}</b><span>可再分</span></div>
+    </div>
+    <h2>未攞（${pend.length} 位）</h2>${pend.length ? `<div class="card rows">${pend.join('')}</div>` : '<div class="mini">冇人欠</div>'}
+    ${done.length ? `<h2>已攞（${done.length} 位）</h2><div class="card rows">${done.join('')}</div>` : ''}
+    ${others.length ? `<h2>送出／賣出</h2><div class="card rows">${others.map(e => `<button class="row" data-act="rec-edit" data-batch="${esc(e.batch||e.id)}"><div class="rmain"><div class="rname">${esc(e.person||'冇寫名')}</div><div class="rsub">${TYPE[e.type]}${e.date?` · ${fmtDate(e.date)}`:''}${e.remark?` · ${esc(e.remark)}`:''}</div></div><span>×${num(e.qty)}</span><span class="chev">›</span></button>`).join('')}</div>` : ''}`;
+  openSheet(`${p.name}`, body, `<button class="btn grow" data-act="prod-edit" data-code="${esc(code)}">改名／總數</button><button class="btn primary grow" data-close="1">關閉</button>`);
+}
+
+/* 客人詳情：未攞、已攞記錄、備註 */
+function openPersonView(name){
+  const C = compute(), p = C.persons.find(x => x.name === name); if (!p) return closeSheet();
+  const nm = c => esc((C.P[c]||{}).name || c);
+  const owe = p.codes.filter(c => (p.ord[c]||0) > (p.pick[c]||0));
+  const recs = batches().filter(b => b.person === p.name);
+  const body = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="badge ${p.st}">${STATUS[p.st]}${p.pend?` · 欠 ${p.pend} 件`:''}</span>${p.last ? `<span class="mini">最後領取 ${fmtDate(p.last)}</span>` : ''}</div>
+    <div class="field"><label>📝 備註（唔使攞貨都寫得，例如貨放咗喺邊、佢幾時嚟）</label>
+      <textarea class="inp" id="pvNote" placeholder="例如：佢嘅福字曆放咗喺二號倉；下星期三先嚟攞">${esc(p.remark||'')}</textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn sm" data-act="note-save" data-name="${esc(p.name)}">儲存備註</button></div></div>
+    ${owe.length ? `<h2>未攞</h2><div class="card rows">${owe.map(c => { const o = p.ord[c]||0, k = p.pick[c]||0; return `<div class="row static"><div class="rmain"><div class="rname">${nm(c)}</div>${k?`<div class="rsub">訂 ${o} · 已攞 ${k}</div>`:''}</div><b class="owe-t">${o-k}</b></div>`; }).join('')}</div>` : ''}
+    ${recs.length ? `<h2>記錄（撳入去改備註、日期或件數）</h2><div class="card rows">${recs.map(b => `<button class="row" data-act="rec-edit" data-batch="${esc(b.batch)}">
+        <div class="rmain"><div class="rname"><span class="tag ${b.type}">${TYPE[b.type]}</span> ${b.date ? fmtDate(b.date) : '冇日期'}</div>
+        <div class="rsub">${b.items.map(e => `${nm(e.code)} ${num(e.qty)}`).join('、')}</div>
+        ${b.remark ? `<div class="rnote">📝 ${esc(b.remark)}</div>` : ''}</div><span class="chev">›</span></button>`).join('')}</div>` : '<div class="mini" style="margin-top:8px">仲未有領取記錄</div>'}`;
+  openSheet(p.name, body, `${p.pend > 0 ? `<button class="btn sm" data-act="pickup" data-name="${esc(p.name)}">部分領取</button>` : `<button class="btn sm" data-act="pickup" data-name="${esc(p.name)}">加單即攞</button>`}
+    <button class="btn sm" data-act="person-edit" data-name="${esc(p.name)}">改訂單</button>
+    ${p.pend > 0 ? `<button class="btn primary sm grow" data-act="pick-all" data-name="${esc(p.name)}">全部攞晒</button>` : '<button class="btn primary sm grow" data-close="1">關閉</button>'}`);
+}
+
+/* 總覽三格嘅詳情 */
+function openStat(k){
+  const C = compute(), ps = C.products.map(pr => C.P[pr.code]);
+  if (k === 'people'){
+    const list = C.persons.filter(p => p.pend > 0);
+    openSheet(`未攞晒嘅客（${list.length} 位）`, list.length ? `<div class="card rows">${list.map(p => `<button class="row" data-act="person-view" data-name="${esc(p.name)}"><div class="rmain"><div class="rname">${esc(p.name)} <span class="badge ${p.st}">${STATUS[p.st]}</span></div><div class="rsub">${esc(oweSummary(p, C))}</div>${p.remark?`<div class="rnote">📝 ${esc(p.remark)}</div>`:''}</div><b class="owe-t">${p.pend}<small> 件</small></b><span class="chev">›</span></button>`).join('')}</div>` : '<div class="empty-state">全部人都攞晒 🎉</div>',
+      `<button class="btn grow" data-act="copy-list">📋 複製名單（貼 WhatsApp）</button><button class="btn primary" data-close="1">關閉</button>`);
+  } else if (k === 'pending'){
+    const list = ps.filter(p => p.pending > 0).sort((a,b) => b.pending - a.pending);
+    openSheet(`未攞嘅貨（${list.reduce((s,p)=>s+p.pending,0)} 件）`, list.length ? `<div class="card rows">${list.map(p => { const n = C.persons.filter(x => (x.ord[p.code]||0) > (x.pick[p.code]||0)).length; return `<button class="row" data-act="prod-view" data-code="${esc(p.code)}"><div class="rmain"><div class="rname">${esc(p.name)} <span class="code">${esc(p.code)}</span></div><div class="rsub">${n} 位客未攞</div></div><b class="owe-t">${p.pending}<small> 件</small></b><span class="chev">›</span></button>`; }).join('')}</div>` : '<div class="empty-state">冇未攞嘅貨</div>',
+      `<button class="btn primary grow" data-close="1">關閉</button>`);
+  } else {
+    const list = ps.filter(p => p.avail !== 0).sort((a,b) => a.avail - b.avail);
+    openSheet('仲可以再分嘅貨', (list.length ? `<div class="card rows">${list.map(p => `<button class="row" data-act="prod-view" data-code="${esc(p.code)}"><div class="rmain"><div class="rname">${esc(p.name)} <span class="code">${esc(p.code)}</span></div><div class="rsub">總數 ${p.total} · 已訂 ${p.ordered}${p.gift+p.sale?` · 送出／賣出 ${p.gift+p.sale}`:''}</div></div><b class="${p.avail<0?'owe-t':''}">${p.avail<0?`超 ${-p.avail}`:p.avail}</b><span class="chev">›</span></button>`).join('')}</div>` : '<div class="empty-state">全部分晒</div>')
+      + `<div class="mini" style="margin-top:10px">可再分 = 總數 − 已訂 − 送出 − 賣出。冇列出嘅即係啱啱好分晒。</div>`,
+      `<button class="btn primary grow" data-close="1">關閉</button>`);
+  }
 }
 
 /* 開新一年 */
@@ -1041,7 +1115,22 @@ document.addEventListener('click', async ev => {
     $('#layer h3').textContent = t.dataset.t==='sale' ? '記賣出' : '記額外送出';
     $('#whoLbl').textContent = t.dataset.t==='sale' ? '賣咗畀邊個' : '送咗畀邊個'; return;
   }
-  const a = t.dataset.act;
+  const a = t.dataset.act, D = { ...t.dataset };
+  if (a === 'back'){ if (S.stack.length){ S.cur = S.stack.pop(); sheetState = null; S.cur(); } return; }
+  const OPEN = {
+    'person-view': () => openPersonView(D.name), 'prod-view': () => openProductView(D.code), 'stat': () => openStat(D.k),
+    'rec-edit': () => openRecord(D.batch), 'pickup': () => openPickup(D.name), 'person-edit': () => openPerson(D.name),
+    'prod-edit': () => openProduct(D.code), 'event': () => openEvent(D.type)
+  };
+  if (OPEN[a]){
+    if (t.closest('#layer') && S.cur) S.stack.push(S.cur); else S.stack = [];
+    S.cur = OPEN[a]; S.cur(); return;
+  }
+  if (a === 'note-save'){
+    const remark = $('#pvNote').value.trim();
+    if (await commit([{ op:'update', table:'people', where:{ year:S.year, name:D.name }, set:{ remark } }], '已儲存備註') && S.cur) S.cur();
+    return;
+  }
   if (a==='refresh') refresh();
   else if (a==='excel') pickExcel();
   else if (a==='prod-view') openProductView(t.dataset.code);
