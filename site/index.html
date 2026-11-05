@@ -395,25 +395,33 @@ function pickExcel(){
   inp.click();
 }
 function openImport(list){
-  const body = `<div class="sub">揀要匯入邊幾年。已經有資料嘅年份會跳過。</div>` + list.map((Y, i) => {
+  const demo = S.api.demo;
+  const body = `<div class="sub">${demo ? '你而家係示範模式，匯入嘅資料只會儲喺呢部機，會取代虛構嘅示範資料。想正式用請先去「設定」連接 Google Sheet。' : '揀要匯入邊幾年。'}</div>` + list.map((Y, i) => {
     const has = S.data.years.includes(Y.year);
     const picks = Y.events.filter(e => e.type==='pickup').length, sales = Y.events.filter(e => e.type==='sale').reduce((s,e)=>s+e.qty,0);
-    return `<label class="qrow" style="cursor:pointer;align-items:flex-start"><div class="lbl"><div class="t">${esc(Y.year)} 年${has ? '（已經有，跳過）' : ''}</div>
+    return `<label class="qrow" style="cursor:pointer;align-items:flex-start"><div class="lbl"><div class="t">${esc(Y.year)} 年${has ? (demo ? '（會取代示範資料）' : '（已經有資料）') : ''}</div>
       <div class="s">${Y.products.length} 款產品 · ${Y.people.length} 位客 · ${Y.orders.reduce((s,o)=>s+o.qty,0)} 件預留${sales ? ` · 賣出 ${sales} 件` : ''}</div>
       <div class="s">${Y.isPast ? '舊年：有日期當嗰日攞晒，冇日期當攞晒（日期留空）' : (picks ? '有填日期嘅當已經攞晒，其他當未攞' : '最新一年：當全部未攞')}</div>
-      ${Y.hiddenNames.length ? `<div class="s">收埋咗嘅行唔會匯入：${esc(Y.hiddenNames.join('、'))}</div>` : ''}</div>
-      <input type="checkbox" data-imp="${i}" ${has ? 'disabled' : 'checked'} style="width:22px;height:22px;flex:none;margin-top:3px"></label>`;
+      ${Y.hiddenNames.length ? `<div class="s">收埋咗嘅行唔會匯入：${esc(Y.hiddenNames.join('、'))}</div>` : ''}
+      ${has && !demo ? `<div class="s bad">剔咗就會刪除呢年網頁入面嘅全部資料（包括喺網頁記低嘅領取、賣出、送出），再用 Excel 覆蓋</div>` : ''}</div>
+      <input type="checkbox" data-imp="${i}" ${has && !demo ? '' : 'checked'} style="width:22px;height:22px;flex:none;margin-top:3px"></label>`;
   }).join('') + `<div class="note">Excel 入面收埋咗嘅欄同行（即係嗰年冇份）會跳過。數字寫成文字（例如「3*」）會當 0，並喺備註寫低。</div>`;
   openSheet('由 Excel 匯入', body, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" id="impBtn">匯入</button>`);
   $('#impBtn').onclick = async () => {
     const chosen = [...document.querySelectorAll('[data-imp]:checked')].map(x => list[+x.dataset.imp]);
     if (!chosen.length) return toast('未揀任何年份', true);
     const latest = chosen[chosen.length-1].year;
-    if (await commit(importOps(chosen), `已匯入 ${chosen.map(c=>c.year).join('、')} 年`)){
-      closeSheet();
-      if (!S.data.products.length || !S.data.years.includes(S.year)){ S.year = latest; store.set('gift-year', latest); }
-      refresh();
-    }
+    const over = chosen.filter(Y => S.data.years.includes(Y.year)).map(Y => Y.year);
+    const run = async () => {
+      const del = over.flatMap(y => ['products','people','orders','events'].map(t => ({ op:'delete', table:t, where:{ year:y } })));
+      if (await commit(del.concat(importOps(chosen)), `已匯入 ${chosen.map(c=>c.year).join('、')} 年`)){
+        closeSheet();
+        S.year = latest; store.set('gift-year', latest);
+        refresh();
+      }
+    };
+    if (over.length && !demo) confirmSheet('覆蓋舊資料', `會先刪除 <b>${esc(over.join('、'))} 年</b>網頁入面嘅全部資料，包括喺網頁記低嘅領取、賣出同送出記錄，再用 Excel 嘅資料取代。刪咗冇得復原。`, '確定覆蓋', run);
+    else run();
   };
 }
 
@@ -529,7 +537,7 @@ function render(){
   let h = '';
   const newest = S.data.years.length ? S.data.years[S.data.years.length-1] : S.year;
   if (S.loaded && S.year < newest) h += `<div class="banner old">你而家睇緊 <b>${esc(S.year)} 年</b>嘅舊記錄。今年嘅喺右上角揀返 ${esc(newest)} 年。</div>`;
-  if (S.api.demo) h += `<div class="banner"><b>示範模式</b>：資料只會儲喺呢部機。去「設定」連接 Google Sheet 之後，就可以喺任何地方同步。</div>`;
+  if (S.api.demo) h += `<div class="banner"><b>示範模式</b>：而家見到嘅係<b>虛構嘅示範資料</b>（陳太、李生…），唔係你嘅 Excel。去「設定」連接 Google Sheet，再「由 Excel 匯入」，就會見到你自己嘅資料。<br><button class="btn sm" data-tab="settings" style="margin-top:8px">去設定連接</button></div>`;
   if (!S.loaded){
     h += S.status === 'err'
       ? `<div class="card empty-state">載入唔到資料。<br><br><button class="btn primary" data-act="refresh">再試一次</button></div>`
@@ -699,7 +707,7 @@ function viewSettings(C){
   </div>`;
   h += `<h2>由 Excel 匯入</h2>
   <div class="card" style="padding:14px">
-    <div class="mini" style="margin-bottom:10px">揀返你個記數 Excel（每年一張、用年份做名嘅工作表），可以一次過匯入幾年嘅產品、客人、預留數同舊記錄。已經有嘅年份會自動跳過。</div>
+    <div class="mini" style="margin-bottom:10px">揀返你個記數 Excel（每年一張、用年份做名嘅工作表），可以一次過匯入幾年嘅產品、客人、預留數同舊記錄。如果嗰年已經有資料，可以揀用 Excel 覆蓋。</div>
     <button class="btn" data-act="excel">揀 Excel 檔案…</button>
   </div>`;
   if (S.api.demo) h += `<h2>示範資料</h2><div class="card" style="padding:14px"><button class="btn danger" data-act="demo-reset">清除示範資料，重新開始</button></div>`;
