@@ -16,7 +16,7 @@
   --red:#a32121; --red-soft:#f7e3df; --gold:#b9862f; --gold-soft:#f6ead3;
   --green:#2f7a4f; --green-soft:#e1f0e6; --amber:#b06d12; --amber-soft:#fbeedb;
   --grey-soft:#efeae3; --shadow:0 1px 2px rgba(60,40,20,.06),0 4px 14px rgba(60,40,20,.05);
-  --r:14px;
+  --r:14px; --note:#1d5ea8; --note-soft:#e8f0fa;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -197,7 +197,10 @@ button.stat:active{transform:scale(.98)}
 .rname .code{font-size:11px;padding:0 5px;background:none;color:var(--muted);border:1px solid var(--line)}
 .rname .tag{font-size:11.5px;font-weight:700;border-radius:7px;padding:1px 7px}
 .rsub{font-size:13px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.rnote{font-size:13px;color:#86601c;margin-top:3px}
+.rnote{display:inline-block;font-size:13px;color:var(--note);background:var(--note-soft);border-radius:7px;padding:2px 8px;margin-top:4px;font-weight:500}
+.note-t{color:var(--note);font-weight:500}
+.fcode{display:inline-block;font-size:11.5px;font-weight:700;color:var(--gold);background:var(--gold-soft);border-radius:5px;padding:0 5px;margin-right:6px;vertical-align:1px;font-variant-numeric:tabular-nums}
+#pvNote,#rRemark,#pRemark,#evRemark,#eRemark{color:var(--note)}
 .rav{text-align:right;min-width:52px}
 .rav b{display:block;font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums}
 .rav small{font-size:11px;color:var(--muted)}
@@ -698,7 +701,7 @@ function viewLog(C){
     const cls = b.type==='pickup' ? 'done' : '';
     const items = b.items.map(e => `<span class="it ${cls}">${esc((C.P[e.code]||{}).name || e.code)} <span class="q">×${num(e.qty)}</span></span>`).join('');
     h += `<div class="card ev" data-act="rec-edit" data-batch="${esc(b.batch)}" role="button" tabindex="0"><span class="tag ${b.type}">${TYPE[b.type]||b.type}</span>
-      <div class="body"><div class="who">${esc(b.person || '（冇寫名）')}</div><div class="items">${items}</div>${b.remark?`<div class="meta">${esc(b.remark)}</div>`:''}</div>
+      <div class="body"><div class="who">${esc(b.person || '（冇寫名）')}</div><div class="items">${items}</div>${b.remark?`<div class="rnote">📝 ${esc(b.remark)}</div>`:''}</div>
       <span class="pen" aria-hidden="true">✎</span></div>`;
   });
   return h + `</div>`;
@@ -796,7 +799,7 @@ async function openPickup(name, fresh){
     return { code:pr.code, name:pr.name, o, k, rem, avail:C.P[pr.code].avail };
   });
   const mine = rows.filter(r => r.rem > 0), others = rows.filter(r => r.rem === 0);
-  const row = (r, v) => `<div class="qrow" data-code="${esc(r.code)}"><div class="lbl"><div class="t">${esc(r.name)}</div><div class="s" data-info></div></div>${stepper(r.code, v)}</div>`;
+  const row = (r, v) => `<div class="qrow" data-code="${esc(r.code)}"><div class="lbl"><div class="t"><span class="fcode">${esc(r.code)}</span>${esc(r.name)}</div><div class="s" data-info></div></div>${stepper(r.code, v)}</div>`;
   const body = `
     <div class="field"><label>日期</label><input class="inp" type="date" id="pDate" value="${today()}"></div>
     ${mine.length ? `<div class="sub">預設係佢未攞嘅數，今次攞幾多就改做幾多</div>${mine.map(r=>row(r, r.rem)).join('')}` : `<div class="sub">佢訂嘅已經攞晒。如果佢加單，喺下面揀產品，多出嘅數會自動加入訂單。</div>`}
@@ -855,7 +858,7 @@ function openPerson(name){
     <div class="sub">預留／訂咗幾多</div>
     ${C.products.map(pr => {
       const o = p ? (p.ord[pr.code]||0) : 0, k = p ? (p.pick[pr.code]||0) : 0, a = C.P[pr.code].avail;
-      return `<div class="qrow"><div class="lbl"><div class="t">${esc(pr.name)}</div><div class="s">${k?`已攞 ${k} · `:''}${a>0?`仲可以加多 ${a} 件`:a===0?'冇得再加':`已經超咗 ${-a} 件`}</div></div>${stepper(pr.code, o)}</div>`;
+      return `<div class="qrow"><div class="lbl"><div class="t"><span class="fcode">${esc(pr.code)}</span>${esc(pr.name)}</div><div class="s">${k?`已攞 ${k} · `:''}${a>0?`仲可以加多 ${a} 件`:a===0?'冇得再加':`已經超咗 ${-a} 件`}</div></div>${stepper(pr.code, o)}</div>`;
     }).join('')}
     ${p ? `<div style="margin-top:16px"><button class="btn danger sm" data-act="person-del" ${hasEv?'disabled':''}>刪除呢位客人</button>${hasEv?'<div class="mini" style="margin-top:6px">佢有領取記錄，要先喺「記錄」刪除先可以刪除客人。</div>':''}</div>` : ''}`;
   openSheet(p ? `改訂單 · ${p.name}` : '新客人', body, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" data-act="person-save">儲存</button>`);
@@ -895,7 +898,7 @@ function openEvent(type){
     <div class="field"><label id="whoLbl">${type==='sale'?'賣咗畀邊個':'送咗畀邊個'}</label><input class="inp" id="evWho" list="peopleList" placeholder="名或者簡稱，例如 TP"><datalist id="peopleList">${C.persons.map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></div>
     <div class="field"><label>日期</label><input class="inp" type="date" id="evDate" value="${today()}"></div>
     <div class="sub">件數</div>
-    ${C.products.map(pr => { const a = C.P[pr.code].avail; return `<div class="qrow" data-code="${esc(pr.code)}" data-avail="${a}"><div class="lbl"><div class="t">${esc(pr.name)}</div><div class="s" data-info>可再分 ${a}</div></div>${stepper(pr.code, 0)}</div>`; }).join('')}
+    ${C.products.map(pr => { const a = C.P[pr.code].avail; return `<div class="qrow" data-code="${esc(pr.code)}" data-avail="${a}"><div class="lbl"><div class="t"><span class="fcode">${esc(pr.code)}</span>${esc(pr.name)}</div><div class="s" data-info>可再分 ${a}</div></div>${stepper(pr.code, 0)}</div>`; }).join('')}
     <div class="field" style="margin-top:12px"><label>備註</label><input class="inp" id="evRemark" placeholder="例如：多咗，送畀樓下保安"></div>`;
   openSheet(type==='sale' ? '記賣出' : '記額外送出', body, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" data-act="event-save">儲存</button>`);
   sheetState = { kind:'event', type };
@@ -954,7 +957,7 @@ function openRecord(batchId, focusRemark){
     <div class="field"><label>日期</label><input class="inp" type="date" id="rDate" value="${esc(b.date)}"></div>
     <div class="field"><label>備註</label><textarea class="inp" id="rRemark" placeholder="例如：佢老公代攞；仲欠一本日記簿">${esc(b.remark)}</textarea></div>
     <div class="sub">件數（改做 0 就會刪走嗰件）</div>
-    ${b.items.map(e => `<div class="qrow"><div class="lbl"><div class="t">${esc((C.P[e.code]||{}).name || e.code)}</div></div>${stepper(e.id, num(e.qty))}</div>`).join('')}
+    ${b.items.map(e => `<div class="qrow"><div class="lbl"><div class="t"><span class="fcode">${esc(e.code)}</span>${esc((C.P[e.code]||{}).name || e.code)}</div></div>${stepper(e.id, num(e.qty))}</div>`).join('')}
     <div style="margin-top:16px"><button class="btn danger sm" data-act="ev-del" data-batch="${esc(b.batch)}">刪除成條記錄</button></div>`;
   openSheet('修改記錄', body, `<button class="btn ghost" data-close="1">取消</button><button class="btn primary grow" id="recSave">儲存</button>`);
   sheetState = { kind:'record', batch:b.batch };
@@ -978,7 +981,7 @@ function openProductView(code){
   const pend = [], done = [];
   C.persons.forEach(x => {
     const o = x.ord[code]||0, k = x.pick[code]||0;
-    if (o > k) pend.push(`<button class="row" data-act="person-view" data-name="${esc(x.name)}"><div class="rmain"><div class="rname">${esc(x.name)}</div><div class="rsub">訂 ${o}${k?` · 已攞 ${k}`:''}${x.remark ? ` · 📝 ${esc(x.remark)}` : ''}</div></div><span class="badge ${k?'part':'none'}">欠 ${o-k}</span><span class="chev">›</span></button>`);
+    if (o > k) pend.push(`<button class="row" data-act="person-view" data-name="${esc(x.name)}"><div class="rmain"><div class="rname">${esc(x.name)}</div><div class="rsub">訂 ${o}${k?` · 已攞 ${k}`:''}${x.remark ? ` <span class="note-t">📝 ${esc(x.remark)}</span>` : ''}</div></div><span class="badge ${k?'part':'none'}">欠 ${o-k}</span><span class="chev">›</span></button>`);
     else if (k) done.push(`<button class="row" data-act="person-view" data-name="${esc(x.name)}"><div class="rmain"><div class="rname">${esc(x.name)}</div></div><span class="ok-t">×${k}</span><span class="chev">›</span></button>`);
   });
   const others = S.data.events.filter(e => e.code === code && e.type !== 'pickup');
@@ -989,7 +992,7 @@ function openProductView(code){
     </div>
     <h2>未攞（${pend.length} 位）</h2>${pend.length ? `<div class="card rows">${pend.join('')}</div>` : '<div class="mini">冇人欠</div>'}
     ${done.length ? `<h2>已攞（${done.length} 位）</h2><div class="card rows">${done.join('')}</div>` : ''}
-    ${others.length ? `<h2>送出／賣出</h2><div class="card rows">${others.map(e => `<button class="row" data-act="rec-edit" data-batch="${esc(e.batch||e.id)}"><div class="rmain"><div class="rname">${esc(e.person||'冇寫名')}</div><div class="rsub">${TYPE[e.type]}${e.date?` · ${fmtDate(e.date)}`:''}${e.remark?` · ${esc(e.remark)}`:''}</div></div><span>×${num(e.qty)}</span><span class="chev">›</span></button>`).join('')}</div>` : ''}`;
+    ${others.length ? `<h2>送出／賣出</h2><div class="card rows">${others.map(e => `<button class="row" data-act="rec-edit" data-batch="${esc(e.batch||e.id)}"><div class="rmain"><div class="rname">${esc(e.person||'冇寫名')}</div><div class="rsub">${TYPE[e.type]}${e.date?` · ${fmtDate(e.date)}`:''}${e.remark?` <span class="note-t">📝 ${esc(e.remark)}</span>`:''}</div></div><span>×${num(e.qty)}</span><span class="chev">›</span></button>`).join('')}</div>` : ''}`;
   openSheet(`${p.name}`, body, `<button class="btn grow" data-act="prod-edit" data-code="${esc(code)}">改名／總數</button><button class="btn primary grow" data-close="1">關閉</button>`);
 }
 
