@@ -153,7 +153,13 @@ h2:first-child{margin-top:4px}
 @media(max-width:699px){.sheet .sf{border-radius:0}}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:13.5px;color:var(--muted);margin-bottom:4px;font-weight:600}
-.inp{width:100%;border:1px solid var(--line);background:var(--card);border-radius:11px;padding:9px 12px;min-height:44px}
+.inp{width:100%;max-width:100%;min-width:0;border:1px solid var(--line);background:var(--card);border-radius:11px;padding:9px 12px;min-height:44px}
+/* iPhone／iPad 嘅日期欄有預設最闊度，會出界 */
+input[type=date].inp{-webkit-appearance:none;appearance:none;display:block;text-align:left;line-height:24px}
+input[type=date].inp::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type=date].inp::-webkit-calendar-picker-indicator{margin-left:auto}
+.field{min-width:0}
+.sheet .sb{overflow-x:hidden}
 textarea.inp{min-height:64px;resize:vertical}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--grey-soft);border-radius:12px;padding:3px;gap:3px}
 .seg button{border:0;background:none;border-radius:10px;padding:8px;font-weight:600;color:var(--muted)}
